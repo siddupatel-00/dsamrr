@@ -30,18 +30,19 @@ function AuthForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  const authenticateSession = async (userEmail: string, userPass: string) => {
+  const authenticateSession = async (userEmail: string, userPass: string, targetUrl?: string) => {
+    const destination = targetUrl || (callbackUrl && callbackUrl !== "/" ? callbackUrl : "/");
     const res = await signIn("credentials", {
       redirect: false,
       email: userEmail.trim(),
       password: userPass.trim(),
-      callbackUrl,
+      callbackUrl: destination,
     });
 
     if (res?.error) {
       setErrorMsg(res.error || "Authentication failed. Please check your credentials.");
     } else {
-      router.push(callbackUrl);
+      router.push(destination);
       router.refresh();
     }
   };
@@ -134,8 +135,9 @@ function AuthForm() {
         return;
       }
 
-      // Complete session creation
-      await authenticateSession(email.trim(), password.trim());
+      // Directly open user's profile on first signup so they can immediately link their accounts
+      const profileUrl = verifyData.user?.username ? `/u/${verifyData.user.username}` : "/settings/verify";
+      await authenticateSession(email.trim(), password.trim(), profileUrl);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to complete signup.");
     } finally {
