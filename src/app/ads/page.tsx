@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   Calendar,
   Lock,
@@ -35,6 +37,9 @@ interface SlotStatus {
 }
 
 export default function AdsPage() {
+  const { data: session } = useSession();
+  const router = useRouter();
+
   const [slots, setSlots] = useState<SlotStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -63,6 +68,11 @@ export default function AdsPage() {
 
   const handleSlotClick = (slot: SlotStatus) => {
     setErrorNotice(null);
+
+    if (!session?.user) {
+      router.push(`/auth?callbackUrl=/ads`);
+      return;
+    }
 
     if (slot.isPrebooked) {
       setErrorNotice(`Sorry, ${slot.label} is already pre-booked by another advertiser. Please select another slot.`);

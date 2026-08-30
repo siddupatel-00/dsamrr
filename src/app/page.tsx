@@ -207,6 +207,10 @@ export default function LeaderboardPage() {
   };
 
   const handleBookAd = (slotId: string) => {
+    if (!session?.user) {
+      router.push(`/auth?callbackUrl=/ads`);
+      return;
+    }
     setActiveBookingSlot(slotId);
   };
 

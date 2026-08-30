@@ -6,12 +6,21 @@ import { initDb } from "@/db/init";
 import { ads } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { STANDARD_AD_SLOTS } from "@/lib/adsData";
+import { getCurrentUser } from "@/lib/requestAuth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
     await initDb();
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, error: "Please sign in to your account to book an advertisement." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { slotId, duration, targetUrl, imageUrl, name, tagline, isPrebook } = body;
 

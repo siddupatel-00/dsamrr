@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Script from "next/script";
+import { useSession } from "next-auth/react";
 import { Megaphone, Plus, Sparkles, X, Check, ArrowRight, Upload, Image as ImageIcon, CreditCard } from "lucide-react";
 
 declare global {
@@ -251,11 +252,12 @@ export function AdBookingModal({
   isPrebook?: boolean;
   prebookStartDate?: string;
 }) {
+  const { data: session } = useSession();
   const [duration, setDuration] = useState<15 | 30>(30);
   const [name, setName] = useState("");
   const [tagline, setTagline] = useState("");
   const [url, setUrl] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(session?.user?.email || "");
   const [logoImage, setLogoImage] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
