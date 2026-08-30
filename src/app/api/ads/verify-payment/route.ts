@@ -231,6 +231,13 @@ export async function POST(req: NextRequest) {
         expiresAt: expiresDateStr,
       });
 
+      if (body.couponCode && String(body.couponCode).toUpperCase().trim() === "CLAUDE10") {
+        await client.execute({
+          sql: `INSERT INTO coupon_redemptions (id, code, slot_id, advertiser_email) VALUES (?, ?, ?, ?)`,
+          args: [crypto.randomUUID(), "CLAUDE10", normalizedSlotId, advertiserEmail || null],
+        });
+      }
+
       // 8. Automated Email Notifications for Advertisers
       if (advertiserEmail) {
         if (isPrebookOrder) {

@@ -22,12 +22,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { slotId, duration, targetUrl, imageUrl, name, tagline, isPrebook } = body;
+    const { slotId, duration, targetUrl, imageUrl, name, tagline, isPrebook, couponCode } = body;
 
     // 1. Strict Server-Side Pricing Enforcement
-    // Ignore any client-sent amount; calculate strictly on server
     const durationDays = Number(duration) === 15 ? 15 : 30;
-    const amountPaise = durationDays === 15 ? 2000 : 3500; // ₹20 = 2000 paise, ₹35 = 3500 paise
+    const cleanCoupon = (couponCode || "").trim().toUpperCase();
+    let amountPaise = durationDays === 15 ? 2000 : 3500; // Default ₹20 or ₹35
+
+    if (cleanCoupon === "CLAUDE10") {
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10'`);
+      const used = Number(redemptions.rows[0]?.count || 0);
+      if (used >= 7) {
+        return NextResponse.json(
+          { success: false, error: "Coupon CLAUDE10 has reached its maximum limit (7/7 used)." },
+          { status: 400 }
+        );
+      }
+      amountPaise = durationDays === 15 ? 700 : 1700; // ₹7 (15d) or ₹17 (30d)
+    }
 
     if (!slotId || !name || !targetUrl) {
       return NextResponse.json(

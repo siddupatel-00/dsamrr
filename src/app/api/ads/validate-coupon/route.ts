@@ -35,6 +35,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (cleanCode === "CLAUDE10") {
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10'`);
+      const used = Number(redemptions.rows[0]?.count || 0);
+
+      if (used >= 7) {
+        return NextResponse.json({
+          success: false,
+          valid: false,
+          error: "Coupon CLAUDE10 has reached its maximum limit (7/7 used).",
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        valid: true,
+        code: "CLAUDE10",
+        discountType: "custom_price",
+        discountPercent: 50,
+        price15: 7,
+        price30: 17,
+        message: "🎉 Coupon CLAUDE10 Applied! 15d for ₹7 / 30d for ₹17",
+      });
+    }
+
     return NextResponse.json({
       success: false,
       valid: false,

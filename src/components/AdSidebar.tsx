@@ -269,10 +269,21 @@ export function AdBookingModal({
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountPercent: number;
+    discountType?: string;
+    price15?: number;
+    price30?: number;
     message: string;
   } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
+
+  const getEffectivePrice = (dur: 15 | 30) => {
+    if (appliedCoupon?.discountPercent === 100) return 0;
+    if (appliedCoupon?.discountType === "custom_price") {
+      return dur === 15 ? (appliedCoupon.price15 ?? 7) : (appliedCoupon.price30 ?? 17);
+    }
+    return dur === 15 ? 20 : 35;
+  };
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,7 +303,10 @@ export function AdBookingModal({
       if (data.success && data.valid) {
         setAppliedCoupon({
           code: data.code || couponInput.trim().toUpperCase(),
-          discountPercent: data.discountPercent || 100,
+          discountPercent: data.discountPercent || 0,
+          discountType: data.discountType,
+          price15: data.price15,
+          price30: data.price30,
           message: data.message || "Coupon applied successfully!",
         });
         setCouponError("");
@@ -422,6 +436,7 @@ export function AdBookingModal({
           tagline: tagline.trim(),
           email: email.trim(),
           isPrebook,
+          couponCode: appliedCoupon?.code,
         }),
       });
 
@@ -459,6 +474,7 @@ export function AdBookingModal({
                   email: email.trim(),
                   duration,
                   isPrebook,
+                  couponCode: appliedCoupon?.code,
                 }),
               });
 
@@ -481,6 +497,7 @@ export function AdBookingModal({
           },
           prefill: {
             name: name.trim(),
+            email: email.trim(),
           },
           theme: {
             color: "#10b981",
@@ -567,7 +584,7 @@ export function AdBookingModal({
                         : "bg-[#15171c] border-[#262933] text-zinc-400 hover:text-zinc-200"
                     }`}
                   >
-                    15 Days ({appliedCoupon?.discountPercent === 100 ? "FREE" : "₹20"})
+                    15 Days ({getEffectivePrice(15) === 0 ? "FREE" : `₹${getEffectivePrice(15)}`})
                   </button>
                   <button
                     type="button"
@@ -578,7 +595,7 @@ export function AdBookingModal({
                         : "bg-[#15171c] border-[#262933] text-zinc-400 hover:text-zinc-200"
                     }`}
                   >
-                    30 Days ({appliedCoupon?.discountPercent === 100 ? "FREE" : "₹35"})
+                    30 Days ({getEffectivePrice(30) === 0 ? "FREE" : `₹${getEffectivePrice(30)}`})
                   </button>
                 </div>
               </div>
@@ -718,7 +735,13 @@ export function AdBookingModal({
                 {appliedCoupon && (
                   <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-800 text-emerald-400 text-[11px] font-mono flex items-center justify-between">
                     <span>{appliedCoupon.message}</span>
-                    <span className="font-bold">100% FREE</span>
+                    <span className="font-bold">
+                      {appliedCoupon.discountPercent === 100
+                        ? "100% FREE"
+                        : appliedCoupon.discountType === "custom_price"
+                        ? "SPECIAL OFFER"
+                        : `${appliedCoupon.discountPercent}% OFF`}
+                    </span>
                   </div>
                 )}
 
@@ -739,14 +762,14 @@ export function AdBookingModal({
                 type="submit"
                 disabled={loading}
                 className={`w-full py-2.5 rounded-lg font-bold text-xs transition font-mono flex items-center justify-center gap-1.5 shadow-md cursor-pointer mt-2 disabled:opacity-50 ${
-                  appliedCoupon?.discountPercent === 100
+                  getEffectivePrice(duration) === 0
                     ? "bg-emerald-400 hover:bg-emerald-300 text-zinc-950"
                     : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950"
                 }`}
               >
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
-                ) : appliedCoupon?.discountPercent === 100 ? (
+                ) : getEffectivePrice(duration) === 0 ? (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Claim Ad Spot for Free (₹0)</span>
@@ -755,7 +778,7 @@ export function AdBookingModal({
                 ) : (
                   <>
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Claim Your Ad for {duration} Days (₹{duration === 15 ? 20 : 35})</span>
+                    <span>Claim Your Ad for {duration} Days (₹{getEffectivePrice(duration)})</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
