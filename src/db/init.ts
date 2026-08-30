@@ -113,6 +113,13 @@ export async function initDb(): Promise<void> {
           last_sent_at INTEGER NOT NULL,
           created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
         );`,
+        `CREATE TABLE IF NOT EXISTS coupon_redemptions (
+          id TEXT PRIMARY KEY,
+          code TEXT NOT NULL,
+          slot_id TEXT NOT NULL,
+          advertiser_email TEXT,
+          created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+        );`,
         `CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);`,
         `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
         `CREATE INDEX IF NOT EXISTS idx_platform_accounts_user ON platform_accounts(user_id);`,

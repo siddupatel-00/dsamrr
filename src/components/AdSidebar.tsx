@@ -262,6 +262,49 @@ export function AdBookingModal({
   const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountPercent: number;
+    message: string;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponInput.trim()) return;
+
+    setCouponLoading(true);
+    setCouponError("");
+
+    try {
+      const res = await fetch("/api/ads/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponInput.trim() }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.valid) {
+        setAppliedCoupon({
+          code: data.code || couponInput.trim().toUpperCase(),
+          discountPercent: data.discountPercent || 100,
+          message: data.message || "Coupon applied successfully!",
+        });
+        setCouponError("");
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(data.error || "Invalid coupon code.");
+      }
+    } catch (err: any) {
+      setCouponError(err.message || "Failed to validate coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -324,6 +367,44 @@ export function AdBookingModal({
       expiresAt: expiresDateStr,
       durationDays: duration,
     };
+
+    // 100% Free Coupon Bypass
+    if (appliedCoupon && appliedCoupon.discountPercent === 100) {
+      try {
+        const freeRes = await fetch("/api/ads/claim-free", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slotId,
+            durationDays: duration,
+            targetUrl: cleanUrl,
+            imageUrl: logoImage,
+            name: name.trim(),
+            tagline: tagline.trim(),
+            email: email.trim(),
+            isPrebook,
+            couponCode: appliedCoupon.code,
+          }),
+        });
+        const freeData = await freeRes.json();
+
+        if (freeData.success) {
+          setSubmitted(true);
+          window.dispatchEvent(new Event("revenueUpdated"));
+          setTimeout(() => {
+            onBooked(createdAd);
+            onClose();
+          }, 1200);
+        } else {
+          setErrorMsg(freeData.error || "Failed to claim free slot with coupon.");
+        }
+      } catch (err: any) {
+        setErrorMsg(err.message || "Failed to claim free slot.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       // 1. Create Razorpay order on backend
@@ -424,7 +505,7 @@ export function AdBookingModal({
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn font-mono">
-        <div className="bg-[#0c0c0e] border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-5 space-y-4">
+        <div className="bg-[#0c0c0e] border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-5 space-y-4 max-h-[92vh] overflow-y-auto">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
             <div className="flex items-center gap-2">
               <div className={`w-7 h-7 rounded-lg ${isPrebook ? "bg-amber-950/60 border-amber-800/60 text-amber-400" : "bg-emerald-950/60 border-emerald-800/60 text-emerald-400"} flex items-center justify-center`}>
@@ -484,7 +565,7 @@ export function AdBookingModal({
                         : "bg-[#15171c] border-[#262933] text-zinc-400 hover:text-zinc-200"
                     }`}
                   >
-                    15 Days (₹20)
+                    15 Days ({appliedCoupon?.discountPercent === 100 ? "FREE" : "₹20"})
                   </button>
                   <button
                     type="button"
@@ -495,7 +576,7 @@ export function AdBookingModal({
                         : "bg-[#15171c] border-[#262933] text-zinc-400 hover:text-zinc-200"
                     }`}
                   >
-                    30 Days (₹35)
+                    30 Days ({appliedCoupon?.discountPercent === 100 ? "FREE" : "₹35"})
                   </button>
                 </div>
               </div>
@@ -594,6 +675,58 @@ export function AdBookingModal({
                 />
               </div>
 
+              {/* Secret Coupon Code Section */}
+              <div className="space-y-1 pt-1">
+                <label className="text-zinc-400 text-[11px]">Have a Coupon Code?</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter coupon code"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value);
+                      if (couponError) setCouponError("");
+                    }}
+                    disabled={Boolean(appliedCoupon)}
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-[#15171c] border border-[#262933] text-zinc-100 focus:outline-none focus:border-zinc-600 uppercase font-mono text-xs disabled:opacity-60"
+                  />
+                  {appliedCoupon ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponInput("");
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono transition cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                      className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {couponLoading ? "..." : "Apply"}
+                    </button>
+                  )}
+                </div>
+
+                {appliedCoupon && (
+                  <div className="p-2 rounded-lg bg-emerald-950/40 border border-emerald-800 text-emerald-400 text-[11px] font-mono flex items-center justify-between">
+                    <span>{appliedCoupon.message}</span>
+                    <span className="font-bold">100% FREE</span>
+                  </div>
+                )}
+
+                {couponError && (
+                  <div className="text-rose-400 text-[11px] font-mono">
+                    {couponError}
+                  </div>
+                )}
+              </div>
+
               {errorMsg && (
                 <div className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-800 text-rose-300 text-xs">
                   {errorMsg}
@@ -603,10 +736,20 @@ export function AdBookingModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition font-mono flex items-center justify-center gap-1.5 shadow-md cursor-pointer mt-2 disabled:opacity-50"
+                className={`w-full py-2.5 rounded-lg font-bold text-xs transition font-mono flex items-center justify-center gap-1.5 shadow-md cursor-pointer mt-2 disabled:opacity-50 ${
+                  appliedCoupon?.discountPercent === 100
+                    ? "bg-emerald-400 hover:bg-emerald-300 text-zinc-950"
+                    : "bg-emerald-500 hover:bg-emerald-400 text-zinc-950"
+                }`}
               >
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                ) : appliedCoupon?.discountPercent === 100 ? (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Claim Ad Spot for Free (₹0)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
                 ) : (
                   <>
                     <CreditCard className="w-3.5 h-3.5" />

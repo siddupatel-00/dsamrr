@@ -128,6 +128,14 @@ export const verificationOtps = sqliteTable("verification_otps", {
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
 
+export const couponRedemptions = sqliteTable("coupon_redemptions", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull(),
+  slotId: text("slot_id").notNull(),
+  advertiserEmail: text("advertiser_email"),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
 // Explicit Drizzle Entity Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   platformAccounts: many(platformAccounts),
