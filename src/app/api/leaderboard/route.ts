@@ -14,13 +14,20 @@ export async function GET(req: NextRequest) {
     }
 
     const leaderboard = await getLeaderboard(date);
-    return NextResponse.json({
-      success: true,
-      date,
-      leaderboard,
-      lastUpdated: new Date().toISOString(),
-      updateIntervalHours: 24,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        date,
+        leaderboard,
+        lastUpdated: new Date().toISOString(),
+        updateIntervalHours: 24,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=10, stale-while-revalidate=59",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

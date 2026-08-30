@@ -97,7 +97,11 @@ export async function GET(req: NextRequest) {
       expiresAt: now + 5000, // 5-second ultra-fast cache
     };
 
-    return NextResponse.json(responseData);
+    return NextResponse.json(responseData, {
+      headers: {
+        "Cache-Control": "public, s-maxage=10, stale-while-revalidate=59",
+      },
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

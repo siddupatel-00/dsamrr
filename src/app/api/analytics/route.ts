@@ -11,10 +11,17 @@ export async function GET(req: NextRequest) {
   try {
     const now = Date.now();
     if (cachedTotalVisitors && cachedTotalVisitors.expiresAt > now) {
-      return NextResponse.json({
-        success: true,
-        totalVisitors: cachedTotalVisitors.count,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          totalVisitors: cachedTotalVisitors.count,
+        },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=10, stale-while-revalidate=59",
+          },
+        }
+      );
     }
 
     await initDb();
@@ -29,10 +36,17 @@ export async function GET(req: NextRequest) {
       expiresAt: now + 5000,
     };
 
-    return NextResponse.json({
-      success: true,
-      totalVisitors,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        totalVisitors,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=10, stale-while-revalidate=59",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
