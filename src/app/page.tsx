@@ -170,7 +170,13 @@ export default function LeaderboardPage() {
             bgClass: chosen.bg,
             borderClass: chosen.border,
             hoverBorderClass: chosen.hover,
-            logo: (
+            logo: dbAd.imageUrl ? (
+              <img
+                src={dbAd.imageUrl}
+                alt={dbAd.name}
+                className="w-7 h-7 rounded-md object-cover bg-zinc-800 border border-white/10"
+              />
+            ) : (
               <div className="w-7 h-7 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white font-bold text-xs font-mono">
                 {dbAd.name.slice(0, 2).toUpperCase()}
               </div>

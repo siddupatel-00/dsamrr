@@ -80,7 +80,21 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // 3. Compute real live total revenue in Rupees
+    const activeAdsList = dbAds
+      .filter((a) => a.startedAt <= today && a.expiresAt >= today)
+      .map((a) => ({
+        id: a.id,
+        slotId: a.slotId,
+        name: a.name,
+        tagline: a.tagline,
+        targetUrl: a.targetUrl,
+        imageUrl: a.imageUrl,
+        startedAt: a.startedAt,
+        expiresAt: a.expiresAt,
+        durationDays: a.durationDays,
+      }));
+
+    // Compute real live total revenue in Rupees
     const totalRevenue = dbAds.reduce((acc, curr) => {
       const rupees = curr.amountPaise ? curr.amountPaise / 100 : (curr.durationDays === 15 ? 20 : 35);
       return acc + rupees;
@@ -88,6 +102,7 @@ export async function GET(req: NextRequest) {
 
     const responseData = {
       success: true,
+      ads: activeAdsList,
       slots: slotList,
       totalRevenue,
     };
