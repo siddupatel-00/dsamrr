@@ -9,6 +9,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "DSAMRR — Verified Competitive Programming Leaderboard",
   description: "Verified developer rankings and daily grind proof-of-work for LeetCode, Codeforces, GFG, HackerRank, CodeChef, and AtCoder.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
