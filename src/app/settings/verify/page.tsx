@@ -173,7 +173,7 @@ function VerifySettingsContent() {
       const res = await fetch("/api/accounts/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountId }),
+        body: JSON.stringify({ accountId, platformAccountId: accountId }),
       });
       const data = await res.json();
       if (data.success) {
@@ -186,7 +186,7 @@ function VerifySettingsContent() {
       } else {
         setVerifyResult({
           success: false,
-          message: data.error || "Verification token not detected. Please verify token placement and retry.",
+          message: data.error || data.message || "Verification token not detected. Please verify token placement and retry.",
         });
       }
     } catch (err: any) {
