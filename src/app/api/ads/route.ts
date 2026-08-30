@@ -6,27 +6,35 @@ import { STANDARD_AD_SLOTS } from "@/lib/adsData";
 
 export const dynamic = "force-dynamic";
 
+let cachedAdsResponse: { data: any; expiresAt: number } | null = null;
+
+function invalidateAdsCache() {
+  cachedAdsResponse = null;
+}
+
 export async function GET(req: NextRequest) {
   try {
+    const now = Date.now();
+    if (cachedAdsResponse && cachedAdsResponse.expiresAt > now) {
+      return NextResponse.json(cachedAdsResponse.data);
+    }
+
     await initDb();
     const today = new Date().toISOString().split("T")[0];
 
-    // 1. Fetch all DB ads
+    // 1. Fetch all DB ads in a single query
     const dbAds = await db.select().from(ads);
 
     // 2. Build complete slot statuses
     const slotList = STANDARD_AD_SLOTS.map((slot) => {
-      // Check for active DB ad (live today)
       const activeDbAd = dbAds.find(
         (a) => a.slotId === slot.id && a.startedAt <= today && a.expiresAt >= today
       );
 
-      // Check for pre-booked DB ad (queue starting in future)
       const prebookedDbAd = dbAds.find(
         (a) => a.slotId === slot.id && a.startedAt > today
       );
 
-      // Resolve active advertisement
       let activeAd: any = null;
       if (activeDbAd) {
         activeAd = {
@@ -48,7 +56,6 @@ export async function GET(req: NextRequest) {
         };
       }
 
-      // Resolve pre-booked queue
       let prebookedAd: any = null;
       if (prebookedDbAd) {
         prebookedAd = {
@@ -79,11 +86,18 @@ export async function GET(req: NextRequest) {
       return acc + rupees;
     }, 0);
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       slots: slotList,
       totalRevenue,
-    });
+    };
+
+    cachedAdsResponse = {
+      data: responseData,
+      expiresAt: now + 5000, // 5-second ultra-fast cache
+    };
+
+    return NextResponse.json(responseData);
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
