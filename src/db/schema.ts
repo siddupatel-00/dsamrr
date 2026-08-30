@@ -119,6 +119,15 @@ export const paymentOrders = sqliteTable("payment_orders", {
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
 
+export const verificationOtps = sqliteTable("verification_otps", {
+  email: text("email").primaryKey(),
+  otpCode: text("otp_code").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  lastSentAt: integer("last_sent_at").notNull(),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
 // Explicit Drizzle Entity Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   platformAccounts: many(platformAccounts),

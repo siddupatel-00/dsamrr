@@ -105,6 +105,14 @@ export async function initDb(): Promise<void> {
           is_prebook INTEGER NOT NULL,
           created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
         );`,
+        `CREATE TABLE IF NOT EXISTS verification_otps (
+          email TEXT PRIMARY KEY,
+          otp_code TEXT NOT NULL,
+          expires_at INTEGER NOT NULL,
+          attempts INTEGER NOT NULL DEFAULT 0,
+          last_sent_at INTEGER NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+        );`,
         `CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);`,
         `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
         `CREATE INDEX IF NOT EXISTS idx_platform_accounts_user ON platform_accounts(user_id);`,

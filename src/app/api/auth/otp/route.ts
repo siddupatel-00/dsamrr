@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { sendSignupOtpEmail } from "@/lib/mailer";
-import { db } from "@/db";
+import { db, client } from "@/db";
 import { initDb } from "@/db/init";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword } from "@/lib/crypto";
-
-// In-memory OTP storage with 10-minute expiry
-interface OtpEntry {
-  code: string;
-  expiresAt: number;
-  attempts: number;
-  lastSentAt: number;
-}
-const otpStore = new Map<string, OtpEntry>();
 
 export const dynamic = "force-dynamic";
 
@@ -34,20 +25,40 @@ export async function POST(req: NextRequest) {
       const [existing] = await db.select().from(users).where(eq(users.email, normalizedEmail));
       if (existing) {
         return NextResponse.json(
-          { success: false, error: "Unable to send a signup code for this email." },
+          { success: false, error: "An account with this email already exists. Please sign in." },
           { status: 409 }
         );
       }
 
-      // Generate secure 6-digit random numeric code
-      const previous = otpStore.get(normalizedEmail);
-      if (previous && Date.now() - previous.lastSentAt < 60_000) {
-        return NextResponse.json({ success: false, error: "Please wait before requesting another code." }, { status: 429 });
+      // Check rate limit in DB
+      const existingOtpRes = await client.execute({
+        sql: `SELECT * FROM verification_otps WHERE email = ?`,
+        args: [normalizedEmail],
+      });
+      const previous = existingOtpRes.rows[0];
+      if (previous && Date.now() - Number(previous.last_sent_at) < 30_000) {
+        return NextResponse.json(
+          { success: false, error: "Please wait 30 seconds before requesting another code." },
+          { status: 429 }
+        );
       }
+
       const otpCode = crypto.randomInt(100000, 1_000_000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-      otpStore.set(normalizedEmail, { code: otpCode, expiresAt, attempts: 0, lastSentAt: Date.now() });
+      // Store in Turso DB (guaranteed to persist across all serverless instances)
+      await client.execute({
+        sql: `
+          INSERT INTO verification_otps (email, otp_code, expires_at, attempts, last_sent_at)
+          VALUES (?, ?, ?, 0, ?)
+          ON CONFLICT(email) DO UPDATE SET
+            otp_code = excluded.otp_code,
+            expires_at = excluded.expires_at,
+            attempts = 0,
+            last_sent_at = excluded.last_sent_at
+        `,
+        args: [normalizedEmail, otpCode, expiresAt, Date.now()],
+      });
 
       const sendResult = await sendSignupOtpEmail({
         toEmail: normalizedEmail,
@@ -71,7 +82,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "verify") {
-      const entry = otpStore.get(normalizedEmail);
+      // Query from DB
+      const res = await client.execute({
+        sql: `SELECT * FROM verification_otps WHERE email = ?`,
+        args: [normalizedEmail],
+      });
+      const entry = res.rows[0];
+
       if (!entry) {
         return NextResponse.json(
           { success: false, error: "No verification code found. Please request a new code." },
@@ -79,28 +96,47 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      if (Date.now() > entry.expiresAt) {
-        otpStore.delete(normalizedEmail);
+      if (Date.now() > Number(entry.expires_at)) {
+        await client.execute({
+          sql: `DELETE FROM verification_otps WHERE email = ?`,
+          args: [normalizedEmail],
+        });
         return NextResponse.json(
           { success: false, error: "Verification code has expired. Please request a new one." },
           { status: 400 }
         );
       }
 
-      entry.attempts += 1;
-      if (entry.attempts > 5) {
-        otpStore.delete(normalizedEmail);
-        return NextResponse.json({ success: false, error: "Too many incorrect attempts. Request a new code." }, { status: 429 });
+      const currentAttempts = Number(entry.attempts || 0) + 1;
+      if (currentAttempts > 5) {
+        await client.execute({
+          sql: `DELETE FROM verification_otps WHERE email = ?`,
+          args: [normalizedEmail],
+        });
+        return NextResponse.json(
+          { success: false, error: "Too many incorrect attempts. Please request a new code." },
+          { status: 429 }
+        );
       }
-      if (entry.code !== String(otp || "").trim()) {
+
+      // Update attempt count
+      await client.execute({
+        sql: `UPDATE verification_otps SET attempts = ? WHERE email = ?`,
+        args: [currentAttempts, normalizedEmail],
+      });
+
+      if (String(entry.otp_code).trim() !== String(otp || "").trim()) {
         return NextResponse.json(
           { success: false, error: "Incorrect verification code. Please check and try again." },
           { status: 400 }
         );
       }
 
-      // Valid OTP: clear it
-      otpStore.delete(normalizedEmail);
+      // Valid OTP: delete it from DB
+      await client.execute({
+        sql: `DELETE FROM verification_otps WHERE email = ?`,
+        args: [normalizedEmail],
+      });
 
       // Create new user with scrypt hashed password in Turso
       let [existingUser] = await db.select().from(users).where(eq(users.email, normalizedEmail));
@@ -110,8 +146,8 @@ export async function POST(req: NextRequest) {
         const username = baseUsername || `user_${uniqueSuffix}`;
         const newUserId = `user_${crypto.randomUUID()}`;
 
-        if (typeof password !== "string" || password.length < 12) {
-          return NextResponse.json({ success: false, error: "Password must be at least 12 characters long." }, { status: 400 });
+        if (!password || typeof password !== "string" || password.length < 6) {
+          return NextResponse.json({ success: false, error: "Password must be at least 6 characters long." }, { status: 400 });
         }
         const passwordHash = hashPassword(password);
 
