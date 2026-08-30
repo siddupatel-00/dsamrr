@@ -1,0 +1,43 @@
+{
+  "name": "dsamrr",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "drizzle-kit push",
+    "db:seed": "tsx src/db/seed.ts",
+    "test:phase1": "tsx scripts/verify-phase1.ts",
+    "test:phase2": "tsx scripts/verify-phase2.ts",
+    "test:phase3": "tsx scripts/verify-phase3.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.38.4",
+    "lucide-react": "^0.475.0",
+    "next": "^14.2.24",
+    "next-auth": "^4.24.15",
+    "nodemailer": "^7.0.13",
+    "razorpay": "^2.9.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.19",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "autoprefixer": "^10.4.20",
+    "dotenv": "^16.4.7",
+    "drizzle-kit": "^0.30.4",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
