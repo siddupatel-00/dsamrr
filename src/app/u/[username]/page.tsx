@@ -11,11 +11,19 @@ import {
   Plus,
   RotateCw,
 } from "lucide-react";
-import { db } from "@/db";
+import { db, client } from "@/db";
 import { initDb } from "@/db/init";
 import { users, platformAccounts, dailySnapshots, streaks } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { ProfileSocialsCard } from "@/components/ProfileSocialsCard";
+import { fetchLeetCodeStats } from "@/lib/platforms/leetcode";
+import { fetchCodeforcesStats } from "@/lib/platforms/codeforces";
+import {
+  fetchGeeksForGeeksStats,
+  fetchHackerRankStats,
+  fetchCodeChefStats,
+  fetchAtCoderStats,
+} from "@/lib/platforms/multiPlatforms";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +135,97 @@ export default async function UserProfilePage({ params }: PageProps) {
     db.select().from(dailySnapshots).where(eq(dailySnapshots.userId, user.id)).orderBy(desc(dailySnapshots.date)),
     db.select().from(streaks).where(eq(streaks.userId, user.id)),
   ]);
+
+  const verifiedAccounts = accounts.filter((a) => a.verifiedStatus === "verified");
+  const today = new Date().toISOString().split("T")[0];
+
+  for (const acc of verifiedAccounts) {
+    const existingSnap = snapshots.find((s) => s.platform === acc.platform);
+    if (!existingSnap || (existingSnap.totalSolved === 0 && existingSnap.score === 0)) {
+      try {
+        let stats = { easy: 0, medium: 0, hard: 0, total: 0, score: 0 };
+        let rawData: any = null;
+        if (acc.platform === "leetcode") {
+          const res = await fetchLeetCodeStats(acc.username);
+          stats = { easy: res.easy, medium: res.medium, hard: res.hard, total: res.total, score: res.score };
+          rawData = res;
+        } else if (acc.platform === "codeforces") {
+          const res = await fetchCodeforcesStats(acc.username);
+          stats = { easy: res.easy, medium: res.medium, hard: res.hard, total: res.total, score: res.score };
+          rawData = res;
+        } else if (acc.platform === "geeksforgeeks") {
+          const res = await fetchGeeksForGeeksStats(acc.username);
+          stats = { easy: res.problemsSolvedEasy, medium: res.problemsSolvedMedium, hard: res.problemsSolvedHard, total: res.totalSolved, score: res.score };
+          rawData = res;
+        } else if (acc.platform === "hackerrank") {
+          const res = await fetchHackerRankStats(acc.username);
+          stats = { easy: res.problemsSolvedEasy, medium: res.problemsSolvedMedium, hard: res.problemsSolvedHard, total: res.totalSolved, score: res.score };
+          rawData = res;
+        } else if (acc.platform === "codechef") {
+          const res = await fetchCodeChefStats(acc.username);
+          stats = { easy: res.problemsSolvedEasy, medium: res.problemsSolvedMedium, hard: res.problemsSolvedHard, total: res.totalSolved, score: res.score };
+          rawData = res;
+        } else if (acc.platform === "atcoder") {
+          const res = await fetchAtCoderStats(acc.username);
+          stats = { easy: res.problemsSolvedEasy, medium: res.problemsSolvedMedium, hard: res.problemsSolvedHard, total: res.totalSolved, score: res.score };
+          rawData = res;
+        }
+
+        const newSnap: any = {
+          id: `snap_${acc.id}_${today}`,
+          userId: user.id,
+          platformAccountId: acc.id,
+          platform: acc.platform,
+          problemsSolvedEasy: stats.easy,
+          problemsSolvedMedium: stats.medium,
+          problemsSolvedHard: stats.hard,
+          totalSolved: stats.total,
+          score: stats.score,
+          date: today,
+          rawData: JSON.stringify(rawData || {}),
+        };
+
+        const existingIdx = snapshots.findIndex((s) => s.platform === acc.platform);
+        if (existingIdx >= 0) {
+          snapshots[existingIdx] = newSnap;
+        } else {
+          snapshots.push(newSnap);
+        }
+
+        await client.execute({
+          sql: `
+            INSERT INTO daily_snapshots (
+              id, user_id, platform_account_id, platform,
+              problems_solved_easy, problems_solved_medium, problems_solved_hard,
+              total_solved, score, date, raw_data
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              problems_solved_easy = excluded.problems_solved_easy,
+              problems_solved_medium = excluded.problems_solved_medium,
+              problems_solved_hard = excluded.problems_solved_hard,
+              total_solved = excluded.total_solved,
+              score = excluded.score,
+              raw_data = excluded.raw_data
+          `,
+          args: [
+            newSnap.id,
+            user.id,
+            acc.id,
+            acc.platform,
+            stats.easy,
+            stats.medium,
+            stats.hard,
+            stats.total,
+            stats.score,
+            today,
+            JSON.stringify(rawData || {}),
+          ],
+        });
+      } catch (e) {
+        console.error(`Live fetch note for ${acc.platform}:${acc.username}`, e);
+      }
+    }
+  }
 
   // Compute total score and total solved across all linked platforms
   let totalScore = 0;
