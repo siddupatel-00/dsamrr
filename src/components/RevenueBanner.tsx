@@ -83,9 +83,7 @@ export function RevenueBanner({
         <div className="pt-0.5">
           report problem{" "}
           <a
-            href="https://x.com/Zenitsu_T7"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="mailto:devsidsaas@gmail.com"
             className="text-yellow-400 hover:text-yellow-300 font-medium hover:underline transition"
           >
             click here
