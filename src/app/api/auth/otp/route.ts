@@ -49,10 +49,20 @@ export async function POST(req: NextRequest) {
 
       otpStore.set(normalizedEmail, { code: otpCode, expiresAt, attempts: 0, lastSentAt: Date.now() });
 
-      await sendSignupOtpEmail({
+      const sendResult = await sendSignupOtpEmail({
         toEmail: normalizedEmail,
         otpCode,
       });
+
+      if (!sendResult.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: sendResult.error || "Failed to deliver verification code. Please check SMTP settings.",
+          },
+          { status: 500 }
+        );
+      }
 
       return NextResponse.json({
         success: true,
