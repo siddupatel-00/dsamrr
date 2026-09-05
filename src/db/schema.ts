@@ -136,6 +136,18 @@ export const couponRedemptions = sqliteTable("coupon_redemptions", {
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
 
+export const visitorLocations = sqliteTable("visitor_locations", {
+  id: text("id").primaryKey(),
+  city: text("city"),
+  country: text("country"),
+  countryCode: text("country_code"),
+  lat: integer("lat").notNull(),
+  lng: integer("lng").notNull(),
+  referrer: text("referrer"),
+  visitCount: integer("visit_count").default(1).notNull(),
+  lastVisitedAt: text("last_visited_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+});
+
 // Explicit Drizzle Entity Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   platformAccounts: many(platformAccounts),

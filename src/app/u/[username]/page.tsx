@@ -86,40 +86,30 @@ export default async function UserProfilePage({ params }: PageProps) {
 
   let [user] = await db.select().from(users).where(eq(users.username, username));
   if (!user) {
-    const newUserId = `user_${username.toLowerCase()}`;
-    try {
-      await db.insert(users).values({
-        id: newUserId,
-        username,
-        name: username,
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`,
-      });
-      [user] = await db.select().from(users).where(eq(users.username, username));
-    } catch (e) {
-      [user] = await db.select().from(users).where(eq(users.username, username));
-    }
-  }
-
-  if (!user) {
-    user = {
-      id: `user_${username}`,
-      username,
-      name: username,
-      email: null,
-      passwordHash: null,
-      avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`,
-      isAnonymous: 0,
-      twitterHandle: null,
-      instagramHandle: null,
-      linkedinHandle: null,
-      githubHandle: null,
-      showTwitter: 1,
-      showInstagram: 1,
-      showLinkedin: 1,
-      showGithub: 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-[#0c0d11] border border-[#1f2128] rounded-3xl p-8 text-center space-y-4 shadow-2xl">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-400">
+            <Lock className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-lg font-bold text-white font-sans">User Not Found</h1>
+            <p className="text-xs text-zinc-400 font-sans">
+              No developer with username &ldquo;{username}&rdquo; exists.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 font-mono transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Leaderboard</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // STRICT PRIVACY CHECK: Only the verified owner of this profile can see editing/linking controls

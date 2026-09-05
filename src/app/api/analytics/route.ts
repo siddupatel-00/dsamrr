@@ -7,6 +7,26 @@ export const dynamic = "force-dynamic";
 
 let cachedTotalVisitors: { count: number; expiresAt: number } | null = null;
 
+function parseTrafficSource(rawRef?: string | null): string {
+  if (!rawRef || rawRef.trim() === "") return "Direct / Bookmark";
+  const ref = rawRef.toLowerCase();
+  if (ref.includes("t.co") || ref.includes("x.com") || ref.includes("twitter.com")) return "X (Twitter)";
+  if (ref.includes("reddit.com") || ref.includes("redd.it")) return "Reddit";
+  if (ref.includes("youtube.com") || ref.includes("youtu.be")) return "YouTube";
+  if (ref.includes("linkedin.com") || ref.includes("lnkd.in")) return "LinkedIn";
+  if (ref.includes("google.")) return "Google Search";
+  if (ref.includes("github.com")) return "GitHub";
+  if (ref.includes("instagram.com")) return "Instagram";
+  if (ref.includes("facebook.com")) return "Facebook";
+  if (ref.includes("discord.com") || ref.includes("discord.gg")) return "Discord";
+  try {
+    const u = new URL(rawRef);
+    return u.hostname.replace("www.", "");
+  } catch {
+    return "Other";
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const now = Date.now();
@@ -65,6 +85,25 @@ export async function POST(req: NextRequest) {
       newVisitorCookie = true;
     }
 
+    let clientReferrer = "";
+    try {
+      const body = await req.json();
+      clientReferrer = body?.referrer || "";
+    } catch {}
+
+    const source = parseTrafficSource(clientReferrer || req.headers.get("referer"));
+
+    // Geo coordinates from headers (Vercel Edge headers)
+    const rawCountry = req.headers.get("x-vercel-ip-country") || "IN";
+    const rawCity = req.headers.get("x-vercel-ip-city") || "Hyderabad";
+    const rawLat = parseFloat(req.headers.get("x-vercel-ip-latitude") || "17.3850");
+    const rawLng = parseFloat(req.headers.get("x-vercel-ip-longitude") || "78.4867");
+
+    const lat = Math.round((isNaN(rawLat) ? 17.38 : rawLat) * 10) / 10;
+    const lng = Math.round((isNaN(rawLng) ? 78.48 : rawLng) * 10) / 10;
+    const city = decodeURIComponent(rawCity);
+    const country = rawCountry;
+
     // Execute atomic analytics tracking in one batch
     await client.execute({
       sql: `
@@ -86,6 +125,20 @@ export async function POST(req: NextRequest) {
       await client.execute({
         sql: `UPDATE site_analytics SET unique_visitors = unique_visitors + 1 WHERE id = ?`,
         args: [`analytics_${today}`],
+      });
+
+      // Insert / increment visitor location marker in Turso DB
+      const locId = `loc_${country}_${city.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+      await client.execute({
+        sql: `
+          INSERT INTO visitor_locations (id, city, country, country_code, lat, lng, referrer, visit_count, last_visited_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+          ON CONFLICT(id) DO UPDATE SET
+            visit_count = visit_count + 1,
+            last_visited_at = CURRENT_TIMESTAMP,
+            referrer = excluded.referrer
+        `,
+        args: [locId, city, country, country, lat, lng, source],
       });
     }
 

@@ -29,3 +29,23 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* MapLibre Dark Popup Overrides */
+.maplibregl-popup-content {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: #09090b !important;
+  border-bottom-color: #09090b !important;
+}
+
+/* Make map canvas background transparent so stars show outside the globe */
+.maplibregl-map,
+.maplibregl-canvas-container,
+.maplibregl-canvas {
+  background: transparent !important;
+}
+

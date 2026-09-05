@@ -120,6 +120,17 @@ export async function initDb(): Promise<void> {
           advertiser_email TEXT,
           created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
         );`,
+        `CREATE TABLE IF NOT EXISTS visitor_locations (
+          id TEXT PRIMARY KEY,
+          city TEXT,
+          country TEXT,
+          country_code TEXT,
+          lat REAL NOT NULL,
+          lng REAL NOT NULL,
+          referrer TEXT,
+          visit_count INTEGER NOT NULL DEFAULT 1,
+          last_visited_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+        );`,
         `CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);`,
         `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
         `CREATE INDEX IF NOT EXISTS idx_platform_accounts_user ON platform_accounts(user_id);`,

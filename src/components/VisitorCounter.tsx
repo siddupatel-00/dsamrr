@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 
 export function VisitorCounter() {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
@@ -10,10 +11,12 @@ export function VisitorCounter() {
       try {
         const isTracked = localStorage.getItem("dsamrr_unique_visitor_id");
         const method = isTracked ? "GET" : "POST";
+        const referrer = typeof document !== "undefined" ? document.referrer : "";
 
         const res = await fetch("/api/analytics", {
           method,
           headers: { "Content-Type": "application/json" },
+          body: method === "POST" ? JSON.stringify({ referrer }) : undefined,
         });
         const data = await res.json();
         if (data.success && typeof data.totalVisitors === "number") {
@@ -36,6 +39,12 @@ export function VisitorCounter() {
       <span className="text-zinc-200 font-bold">
         {visitorCount !== null ? visitorCount.toLocaleString() : "..."}
       </span>
+      <Link
+        href="/map"
+        className="text-yellow-400 hover:text-yellow-300 underline underline-offset-2 ml-1 text-xs font-mono font-medium transition cursor-pointer"
+      >
+        see here
+      </Link>
     </div>
   );
 }
