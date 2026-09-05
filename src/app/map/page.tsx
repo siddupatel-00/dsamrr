@@ -89,8 +89,7 @@ export default function MapTelemetryPage() {
         </div>
 
         {/* Metric Pill Breakdowns */}
-        <div className="pt-1.5 border-t border-zinc-800/70 flex items-center gap-2">
-          <span className="text-zinc-500 shrink-0">Countries</span>
+        <div className="pt-1.5 border-t border-zinc-800/70 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <span className="px-1.5 py-0.5 rounded-md bg-zinc-900/90 border border-zinc-800 text-zinc-300 text-[10px]">
               {uniqueCountries} {uniqueCountries === 1 ? "country" : "countries"}
@@ -99,6 +98,12 @@ export default function MapTelemetryPage() {
               {uniqueCities} {uniqueCities === 1 ? "city" : "cities"}
             </span>
           </div>
+          <Link
+            href="/analytics"
+            className="text-yellow-400 hover:text-yellow-300 underline text-[10px] font-mono decoration-yellow-400/80 hover:decoration-yellow-300 transition shrink-0 ml-1 cursor-pointer"
+          >
+            show analytics
+          </Link>
         </div>
       </div>
 

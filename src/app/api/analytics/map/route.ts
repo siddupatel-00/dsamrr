@@ -42,10 +42,25 @@ export async function GET(req: NextRequest) {
 
     const totalVisitors = Number(totalRes.rows[0]?.total_visitors || 0);
 
+function getCountryName(code: string): string {
+  if (!code || code === "Global" || code === "Unknown") return "Global";
+  const trimmed = code.trim();
+  if (trimmed.length === 2) {
+    try {
+      const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+      return regionNames.of(trimmed.toUpperCase()) || trimmed;
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
     const locations = locRes.rows.map((r: any) => ({
       id: String(r.id),
       city: String(r.city || "Unknown"),
-      country: String(r.country || "Global"),
+      country: getCountryName(String(r.country || r.country_code || "Global")),
+      countryCode: String(r.country_code || r.country || "").toUpperCase(),
       lat: Number(r.lat || 0),
       lng: Number(r.lng || 0),
       visitCount: Number(r.visit_count || 1),
