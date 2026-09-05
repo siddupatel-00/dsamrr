@@ -96,14 +96,31 @@ export async function POST(req: NextRequest) {
     const source = parseTrafficSource(clientReferrer || req.headers.get("referer"));
 
     // Geo coordinates from headers (Vercel Edge headers)
-    const rawCountry = req.headers.get("x-vercel-ip-country") || "IN";
-    const rawCity = req.headers.get("x-vercel-ip-city") || "Hyderabad";
-    const rawLat = parseFloat(req.headers.get("x-vercel-ip-latitude") || "17.3850");
-    const rawLng = parseFloat(req.headers.get("x-vercel-ip-longitude") || "78.4867");
+    const rawCountry = (req.headers.get("x-vercel-ip-country") || "IN").trim().toUpperCase();
+    const headerCity = req.headers.get("x-vercel-ip-city");
+    const rawLat = parseFloat(req.headers.get("x-vercel-ip-latitude") || "");
+    const rawLng = parseFloat(req.headers.get("x-vercel-ip-longitude") || "");
 
-    const lat = Math.round((isNaN(rawLat) ? 17.38 : rawLat) * 10) / 10;
-    const lng = Math.round((isNaN(rawLng) ? 78.48 : rawLng) * 10) / 10;
-    const city = decodeURIComponent(rawCity);
+    // Country-aware defaults if Vercel city header is omitted
+    let city = headerCity ? decodeURIComponent(headerCity) : "";
+    let defaultLat = 17.38;
+    let defaultLng = 78.48;
+
+    if (!city) {
+      if (rawCountry === "IN") { city = "Hyderabad"; defaultLat = 17.38; defaultLng = 78.48; }
+      else if (rawCountry === "NL") { city = "Amsterdam"; defaultLat = 52.37; defaultLng = 4.89; }
+      else if (rawCountry === "NO") { city = "Oslo"; defaultLat = 59.91; defaultLng = 10.75; }
+      else if (rawCountry === "CH") { city = "Zurich"; defaultLat = 47.37; defaultLng = 8.54; }
+      else if (rawCountry === "AU") { city = "Sydney"; defaultLat = -33.86; defaultLng = 151.20; }
+      else if (rawCountry === "US") { city = "New York"; defaultLat = 40.71; defaultLng = -74.00; }
+      else if (rawCountry === "GB") { city = "London"; defaultLat = 51.50; defaultLng = -0.12; }
+      else if (rawCountry === "DE") { city = "Berlin"; defaultLat = 52.52; defaultLng = 13.40; }
+      else if (rawCountry === "SG") { city = "Singapore"; defaultLat = 1.35; defaultLng = 103.82; }
+      else { city = "Central"; defaultLat = 20.0; defaultLng = 0.0; }
+    }
+
+    const lat = Math.round((isNaN(rawLat) ? defaultLat : rawLat) * 10) / 10;
+    const lng = Math.round((isNaN(rawLng) ? defaultLng : rawLng) * 10) / 10;
     const country = rawCountry;
 
     // Execute atomic analytics tracking in one batch
