@@ -132,27 +132,73 @@ export function InteractiveGlobe({
     }
     reqId = requestAnimationFrame(rotateGlobe);
 
-    // Pause on user interaction
-    const handleInteractionStart = () => {
-      isUserInteracting.current = true;
-    };
-    const handleInteractionEnd = () => {
-      setTimeout(() => {
-        isUserInteracting.current = false;
-      }, 4000);
+    // Robustly check if a screen coordinate is on the globe sphere
+    const isPointOnGlobe = (point: { x: number; y: number }) => {
+      // 1. Ray-sphere intersection via MapLibre currentTransform
+      try {
+        const tr = (map as any).transform?.currentTransform;
+        if (tr && typeof tr.isPointOnMapSurface === "function") {
+          const hit = tr.isPointOnMapSurface(point);
+          if (typeof hit === "boolean") return hit;
+        }
+      } catch (err) {}
+
+      // 2. Geometric horizon check
+      try {
+        const container = map.getContainer();
+        const cx = container.clientWidth / 2;
+        const cy = container.clientHeight / 2;
+        const center = map.getCenter();
+        const rightEdge = map.project([center.lng + 85, center.lat]);
+        const radius = Math.abs(rightEdge.x - cx);
+        if (radius > 20) {
+          const dx = point.x - cx;
+          const dy = point.y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          return dist <= radius * 1.04;
+        }
+      } catch (err) {}
+
+      return true; // Default to assuming interaction was on globe
     };
 
-    map.on("mousedown", handleInteractionStart);
-    map.on("touchstart", handleInteractionStart);
-    map.on("movestart", (e) => {
-      if (e.originalEvent) isUserInteracting.current = true;
+    // Pause on touching globe; resume on clicking empty space/stars
+    const handlePointerAction = (e: maplibregl.MapMouseEvent | maplibregl.MapTouchEvent) => {
+      const target = (e.originalEvent?.target as HTMLElement) || null;
+      if (target && target.closest("button, a, .maplibregl-ctrl, .maplibregl-popup")) {
+        return;
+      }
+
+      const onGlobe = isPointOnGlobe(e.point);
+      if (onGlobe) {
+        // Clicked/dragged directly on the globe -> stop rotating where it is
+        isUserInteracting.current = true;
+      } else {
+        // Clicked on empty space (stars) -> resume rotation
+        isUserInteracting.current = false;
+      }
+    };
+
+    map.on("mousedown", handlePointerAction);
+    map.on("touchstart", handlePointerAction);
+
+    // Any dragging action always pauses rotation
+    map.on("dragstart", () => {
+      isUserInteracting.current = true;
+    });
+    map.on("rotatestart", () => {
+      isUserInteracting.current = true;
+    });
+    map.on("pitchstart", () => {
+      isUserInteracting.current = true;
     });
 
-    map.on("mouseup", handleInteractionEnd);
-    map.on("touchend", handleInteractionEnd);
-
     const handleOutsideClick = (e: MouseEvent) => {
-      if (mapContainer.current && !mapContainer.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      if (target.closest("button, a, .maplibregl-ctrl, .maplibregl-popup")) {
+        return;
+      }
+      if (mapContainer.current && !mapContainer.current.contains(target)) {
         isUserInteracting.current = false;
       }
     };

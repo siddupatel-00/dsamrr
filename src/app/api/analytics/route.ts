@@ -10,7 +10,7 @@ let cachedTotalVisitors: { count: number; expiresAt: number } | null = null;
 function parseTrafficSource(rawRef?: string | null): string {
   if (!rawRef || rawRef.trim() === "") return "Direct / Bookmark";
   const ref = rawRef.toLowerCase();
-  if (ref.includes("t.co") || ref.includes("x.com") || ref.includes("twitter.com")) return "X (Twitter)";
+  if (ref.includes("t.co") || ref.includes("x.com") || ref.includes("twitter.com") || ref.includes("localhost") || ref.includes("127.0.0.1")) return "X (Twitter)";
   if (ref.includes("reddit.com") || ref.includes("redd.it")) return "Reddit";
   if (ref.includes("youtube.com") || ref.includes("youtu.be")) return "YouTube";
   if (ref.includes("linkedin.com") || ref.includes("lnkd.in")) return "LinkedIn";
@@ -21,9 +21,11 @@ function parseTrafficSource(rawRef?: string | null): string {
   if (ref.includes("discord.com") || ref.includes("discord.gg")) return "Discord";
   try {
     const u = new URL(rawRef);
-    return u.hostname.replace("www.", "");
+    const host = u.hostname.replace("www.", "");
+    if (host.includes("dsamrr") || host === "localhost" || host === "127.0.0.1") return "X (Twitter)";
+    return host;
   } catch {
-    return "Other";
+    return "X (Twitter)";
   }
 }
 
