@@ -2,10 +2,6 @@
   "crons": [
     {
       "path": "/api/cron/snapshot",
-      "schedule": "0 */2 * * *"
-    },
-    {
-      "path": "/api/cron/snapshot",
       "schedule": "29 18 * * *"
     }
   ]

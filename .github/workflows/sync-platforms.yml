@@ -1,0 +1,15 @@
+name: Sync User Platforms Every 2 Hours
+
+on:
+  schedule:
+    # Runs every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger platform data sync
+        run: |
+          curl -s -X GET "https://dsamrr.vercel.app/api/cron/snapshot"
