@@ -239,10 +239,34 @@ export default async function UserProfilePage({ params }: PageProps) {
   ];
   const joinedMonthYear = `${monthNames[createdDate.getUTCMonth()]} ${createdDate.getUTCFullYear()}`;
 
-  // Monthly stats from snapshots
+  // Sort snapshots chronologically (ascending) for delta calculations
+  const sortedSnaps = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Compute daily delta problems solved across platforms
+  const getDailyDelta = (targetDateStr: string) => {
+    let delta = 0;
+    SUPPORTED_PLATFORMS.forEach((platform) => {
+      const platformSnaps = sortedSnaps.filter((s) => s.platform === platform.id);
+      const targetSnap = platformSnaps.find((s) => s.date === targetDateStr);
+      if (!targetSnap) return;
+
+      const prevSnap = platformSnaps
+        .filter((s) => s.date < targetDateStr)
+        .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+      if (prevSnap) {
+        delta += Math.max(0, targetSnap.totalSolved - prevSnap.totalSolved);
+      }
+    });
+    return delta;
+  };
+
+  // Monthly stats from daily deltas
   const currentMonthPrefix = new Date().toISOString().slice(0, 7);
-  const thisMonthSnapshots = snapshots.filter((s) => s.date.startsWith(currentMonthPrefix));
-  const thisMonthSolved = thisMonthSnapshots.reduce((acc, curr) => acc + (curr.totalSolved || 0), 0);
+  const distinctMonthDates = Array.from(
+    new Set(snapshots.filter((s) => s.date.startsWith(currentMonthPrefix)).map((s) => s.date))
+  );
+  const thisMonthSolved = distinctMonthDates.reduce((acc, dateStr) => acc + getDailyDelta(dateStr), 0);
 
   // Helper for 14-day lockout
   const getLockoutInfo = (acc?: typeof platformAccounts.$inferSelect) => {
@@ -261,16 +285,15 @@ export default async function UserProfilePage({ params }: PageProps) {
     return { isLocked: false, daysRemaining: 0 };
   };
 
-  // 30-Day Grid
+  // 30-Day Grid (Daily solved deltas)
   const days30: { date: string; count: number }[] = [];
   const now = new Date();
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - i);
     const dateStr = d.toISOString().split("T")[0];
-    const daySnaps = snapshots.filter((s) => s.date === dateStr);
-    const daySolved = daySnaps.reduce((acc, curr) => acc + curr.totalSolved, 0);
-    days30.push({ date: dateStr, count: daySolved });
+    const dayDelta = getDailyDelta(dateStr);
+    days30.push({ date: dateStr, count: dayDelta });
   }
 
   const isAnonymousMode = user.isAnonymous === 1;
