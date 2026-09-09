@@ -71,17 +71,25 @@ export async function POST(
           rawData = res;
         }
 
-        // Check today's existing snapshot
-        const [existingTodaySnap] = await db
+        // Check prior snapshots to avoid overwriting with 0 on scrape failure
+        const userSnaps = await db
           .select()
           .from(dailySnapshots)
           .where(
             and(
               eq(dailySnapshots.userId, user.id),
-              eq(dailySnapshots.platformAccountId, acc.id),
-              eq(dailySnapshots.date, today)
+              eq(dailySnapshots.platformAccountId, acc.id)
             )
           );
+
+        const hadPositive = userSnaps.some((s) => s.totalSolved > 0);
+        if (stats.total === 0 && hadPositive) {
+          console.warn(`[Sync] Platform ${acc.platform} for ${acc.username} returned 0 solved, but previous snapshot had >0. Skipping 0 snapshot.`);
+          continue;
+        }
+
+        // Check today's existing snapshot
+        const existingTodaySnap = userSnaps.find((s) => s.date === today);
 
         if (existingTodaySnap) {
           await db

@@ -130,8 +130,8 @@ export default async function UserProfilePage({ params }: PageProps) {
   const today = new Date().toISOString().split("T")[0];
 
   for (const acc of verifiedAccounts) {
-    const existingSnap = snapshots.find((s) => s.platform === acc.platform);
-    if (!existingSnap || (existingSnap.totalSolved === 0 && existingSnap.score === 0)) {
+    const todaySnap = snapshots.find((s) => s.platform === acc.platform && s.date === today);
+    if (!todaySnap) {
       try {
         let stats = { easy: 0, medium: 0, hard: 0, total: 0, score: 0 };
         let rawData: any = null;
@@ -161,6 +161,12 @@ export default async function UserProfilePage({ params }: PageProps) {
           rawData = res;
         }
 
+        // Avoid overwriting/creating a 0 snapshot if the account already has positive history
+        const hadPositive = snapshots.some((s) => s.platform === acc.platform && s.totalSolved > 0);
+        if (stats.total === 0 && hadPositive) {
+          continue;
+        }
+
         const newSnap: any = {
           id: `snap_${acc.id}_${today}`,
           userId: user.id,
@@ -175,11 +181,11 @@ export default async function UserProfilePage({ params }: PageProps) {
           rawData: JSON.stringify(rawData || {}),
         };
 
-        const existingIdx = snapshots.findIndex((s) => s.platform === acc.platform);
+        const existingIdx = snapshots.findIndex((s) => s.platform === acc.platform && s.date === today);
         if (existingIdx >= 0) {
           snapshots[existingIdx] = newSnap;
         } else {
-          snapshots.push(newSnap);
+          snapshots.unshift(newSnap);
         }
 
         await client.execute({
@@ -222,7 +228,12 @@ export default async function UserProfilePage({ params }: PageProps) {
   let totalSolved = 0;
 
   SUPPORTED_PLATFORMS.forEach((p) => {
-    const snap = snapshots.find((s) => s.platform === p.id);
+    const platformSnaps = snapshots.filter((s) => s.platform === p.id);
+    const hasAnyPositive = platformSnaps.some((s) => s.totalSolved > 0);
+    const validSnaps = hasAnyPositive
+      ? platformSnaps.filter((s) => s.totalSolved > 0)
+      : platformSnaps;
+    const snap = validSnaps[0];
     if (snap) {
       totalScore += snap.score;
       totalSolved += snap.totalSolved;
@@ -247,10 +258,19 @@ export default async function UserProfilePage({ params }: PageProps) {
     let delta = 0;
     SUPPORTED_PLATFORMS.forEach((platform) => {
       const platformSnaps = sortedSnaps.filter((s) => s.platform === platform.id);
-      const targetSnap = platformSnaps.find((s) => s.date === targetDateStr);
+      if (platformSnaps.length === 0) return;
+
+      // Filter out zero-solved snapshots if valid positive snapshots exist for this platform
+      // to protect against scrape/network glitches resetting the baseline
+      const hasAnyPositive = platformSnaps.some((s) => s.totalSolved > 0);
+      const validSnaps = hasAnyPositive
+        ? platformSnaps.filter((s) => s.totalSolved > 0)
+        : platformSnaps;
+
+      const targetSnap = validSnaps.find((s) => s.date === targetDateStr);
       if (!targetSnap) return;
 
-      const prevSnap = platformSnaps
+      const prevSnap = validSnaps
         .filter((s) => s.date < targetDateStr)
         .sort((a, b) => b.date.localeCompare(a.date))[0];
 

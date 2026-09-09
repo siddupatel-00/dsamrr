@@ -172,9 +172,14 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
         .filter((s) => s.platformAccountId === pa.id || (s.platform === pa.platform && !s.platformAccountId))
         .sort((a, b) => b.date.localeCompare(a.date));
 
-      const todaySnap = platformSnaps.find((s) => s.date === currentDateUtc);
-      const baselineSnap = platformSnaps.find((s) => s.date < currentDateUtc);
-      const latestSnap = todaySnap || platformSnaps[0];
+      const hasPositiveSnaps = platformSnaps.some((s) => s.totalSolved > 0);
+      const validPlatformSnaps = hasPositiveSnaps
+        ? platformSnaps.filter((s) => s.totalSolved > 0)
+        : platformSnaps;
+
+      const todaySnap = validPlatformSnaps.find((s) => s.date === currentDateUtc);
+      const baselineSnap = validPlatformSnaps.find((s) => s.date < currentDateUtc);
+      const latestSnap = todaySnap || validPlatformSnaps[0];
 
       let pAllTimeEasy = 0;
       let pAllTimeMedium = 0;

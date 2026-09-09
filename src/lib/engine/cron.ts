@@ -80,13 +80,23 @@ export async function executeDailySnapshot(targetDateUtc: string = getUtcDateStr
           )
         );
 
-      const latestPrev = prevSnaps
+      const hasPositivePrev = prevSnaps.some((s) => s.totalSolved > 0);
+      if (stats.total === 0 && hasPositivePrev) {
+        console.warn(`[Cron] Platform ${account.platform} for ${account.username} returned 0 solved, but previous snapshot had >0. Skipping 0 snapshot.`);
+        continue;
+      }
+
+      const validPrevSnaps = hasPositivePrev
+        ? prevSnaps.filter((s) => s.totalSolved > 0)
+        : prevSnaps;
+
+      const latestPrev = validPrevSnaps
         .filter((s) => s.date < targetDateUtc)
         .sort((a, b) => b.date.localeCompare(a.date))[0];
 
       const dailyDeltaScore = latestPrev
         ? Math.max(0, stats.score - latestPrev.score)
-        : stats.score;
+        : 0;
 
       const currentActivity = userActivityToday.get(account.userId) || 0;
       userActivityToday.set(account.userId, currentActivity + dailyDeltaScore);
