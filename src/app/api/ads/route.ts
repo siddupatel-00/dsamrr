@@ -96,8 +96,28 @@ export async function GET(req: NextRequest) {
 
     // Compute real live total revenue in Rupees
     const totalRevenue = dbAds.reduce((acc, curr) => {
-      const rupees = curr.amountPaise ? curr.amountPaise / 100 : (curr.durationDays === 15 ? 1 : 2);
-      return acc + rupees;
+      // Free ads (claimed with coupon, amountPaise === 0, or coupon/free payment IDs) contribute ₹0
+      if (
+        curr.amountPaise === 0 ||
+        curr.paymentId?.startsWith("coupon_") ||
+        curr.paymentId?.startsWith("free_") ||
+        curr.orderId?.startsWith("coupon_")
+      ) {
+        return acc;
+      }
+
+      // If amountPaise is explicitly recorded as a number (> 0), convert from paise to rupees
+      if (typeof curr.amountPaise === "number" && curr.amountPaise > 0) {
+        return acc + curr.amountPaise / 100;
+      }
+
+      // If it's a paid ad but amountPaise was not recorded (legacy records), only add if it has a real paymentId
+      if (curr.paymentId && !curr.paymentId.startsWith("coupon_") && !curr.paymentId.startsWith("free_")) {
+        const rupees = curr.durationDays === 15 ? 1 : 2;
+        return acc + rupees;
+      }
+
+      return acc;
     }, 0);
 
     const responseData = {

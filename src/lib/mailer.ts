@@ -139,7 +139,8 @@ export async function sendAdLiveConfirmationEmail(params: {
   if (!isValidEmail(toEmail)) return { success: false, error: "Invalid recipient email" };
 
   const spotName = slotLabel || slotId || "L1";
-  const amountRupees = amountPaise ? amountPaise / 100 : (durationDays === 15 ? 1 : 2);
+  const isFree = amountPaise === 0 || paymentId?.startsWith("coupon_") || paymentId?.startsWith("free_");
+  const amountRupees = isFree ? 0 : (typeof amountPaise === "number" ? amountPaise / 100 : (durationDays === 15 ? 1 : 2));
   const html = `
     <div style="background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; border-radius: 16px; border: 1px solid #27272a;">
       <div style="margin-bottom: 20px;">
@@ -169,7 +170,7 @@ export async function sendAdLiveConfirmationEmail(params: {
           </tr>
           <tr>
             <td style="color: #a1a1aa; padding: 6px 0;">Amount Paid:</td>
-            <td style="color: #34d399; font-weight: 700; font-size: 15px; text-align: right;">&#8377;${amountRupees}</td>
+            <td style="color: #34d399; font-weight: 700; font-size: 15px; text-align: right;">&#8377;${amountRupees}${isFree ? " (FREE - Coupon Applied)" : ""}</td>
           </tr>
           ${paymentId ? `<tr>
             <td style="color: #71717a; padding: 6px 0; font-size: 11px;">Payment Reference:</td>
@@ -209,7 +210,8 @@ export async function sendAdPrebookConfirmationEmail(params: {
   if (!isValidEmail(toEmail)) return { success: false, error: "Invalid recipient email" };
 
   const spotName = slotLabel || slotId || "L1";
-  const amountRupees = amountPaise ? amountPaise / 100 : (durationDays === 15 ? 1 : 2);
+  const isFree = amountPaise === 0 || paymentId?.startsWith("coupon_") || paymentId?.startsWith("free_");
+  const amountRupees = isFree ? 0 : (typeof amountPaise === "number" ? amountPaise / 100 : (durationDays === 15 ? 1 : 2));
   const startDate = scheduledStart || startedAt || "Scheduled Date";
   const endDate = scheduledEnd || expiresAt || "Scheduled End";
 
@@ -242,7 +244,7 @@ export async function sendAdPrebookConfirmationEmail(params: {
           </tr>
           <tr>
             <td style="color: #a1a1aa; padding: 6px 0;">Amount Paid:</td>
-            <td style="color: #34d399; font-weight: 700; font-size: 15px; text-align: right;">&#8377;${amountRupees}</td>
+            <td style="color: #34d399; font-weight: 700; font-size: 15px; text-align: right;">&#8377;${amountRupees}${isFree ? " (FREE - Coupon Applied)" : ""}</td>
           </tr>
           ${paymentId ? `<tr>
             <td style="color: #71717a; padding: 6px 0; font-size: 11px;">Payment ID:</td>
