@@ -139,7 +139,7 @@ export async function sendAdLiveConfirmationEmail(params: {
   if (!isValidEmail(toEmail)) return { success: false, error: "Invalid recipient email" };
 
   const spotName = slotLabel || slotId || "L1";
-  const amountRupees = amountPaise ? amountPaise / 100 : (durationDays === 15 ? 20 : 35);
+  const amountRupees = amountPaise ? amountPaise / 100 : (durationDays === 15 ? 1 : 2);
   const html = `
     <div style="background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; border-radius: 16px; border: 1px solid #27272a;">
       <div style="margin-bottom: 20px;">
@@ -209,7 +209,7 @@ export async function sendAdPrebookConfirmationEmail(params: {
   if (!isValidEmail(toEmail)) return { success: false, error: "Invalid recipient email" };
 
   const spotName = slotLabel || slotId || "L1";
-  const amountRupees = amountPaise ? amountPaise / 100 : (durationDays === 15 ? 20 : 35);
+  const amountRupees = amountPaise ? amountPaise / 100 : (durationDays === 15 ? 1 : 2);
   const startDate = scheduledStart || startedAt || "Scheduled Date";
   const endDate = scheduledEnd || expiresAt || "Scheduled End";
 

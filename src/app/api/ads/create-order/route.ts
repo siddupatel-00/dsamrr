@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // 1. Strict Server-Side Pricing Enforcement
     const durationDays = Number(duration) === 15 ? 15 : 30;
     const cleanCoupon = (couponCode || "").trim().toUpperCase();
-    let amountPaise = durationDays === 15 ? 2000 : 3500; // Default ₹20 or ₹35
+    let amountPaise = durationDays === 15 ? 100 : 200; // Default ₹1 (15d) or ₹2 (30d)
 
     if (cleanCoupon === "CLAUDE10") {
       const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10'`);
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      amountPaise = durationDays === 15 ? 700 : 1700; // ₹7 (15d) or ₹17 (30d)
+      amountPaise = 100; // ₹1 for both 15d and 30d
     }
 
     if (!slotId || !name || !targetUrl) {
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           status: "created",
         },
         durationDays,
-        amountInRupees: durationDays === 15 ? 20 : 35,
+        amountInRupees: amountPaise / 100,
         isDevFallback: true,
       });
     }
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       order,
       keyId,
       durationDays,
-      amountInRupees: durationDays === 15 ? 20 : 35,
+      amountInRupees: amountPaise / 100,
     });
   } catch (err: any) {
     console.error("Razorpay order creation error:", err);

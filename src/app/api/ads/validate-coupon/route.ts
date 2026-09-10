@@ -53,9 +53,9 @@ export async function POST(req: NextRequest) {
         code: "CLAUDE10",
         discountType: "custom_price",
         discountPercent: 50,
-        price15: 7,
-        price30: 17,
-        message: "🎉 Coupon CLAUDE10 Applied! 15d for ₹7 / 30d for ₹17",
+        price15: 1,
+        price30: 1,
+        message: "🎉 Coupon CLAUDE10 Applied! 15d for ₹1 / 30d for ₹1",
       });
     }
 

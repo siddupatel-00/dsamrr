@@ -197,7 +197,7 @@ export function TrustMrrSidebar({
                 Claim Ad Spot #{position === "left" ? "L" : "R"}{idx + 1}
               </div>
               <p className="text-[10px] text-zinc-500 font-sans mt-0.5">
-                Claim for 15d (₹20) or 30d (₹35)
+                Claim for 15d (₹1) or 30d (₹2)
               </p>
             </button>
           );
@@ -280,9 +280,9 @@ export function AdBookingModal({
   const getEffectivePrice = (dur: 15 | 30) => {
     if (appliedCoupon?.discountPercent === 100) return 0;
     if (appliedCoupon?.discountType === "custom_price") {
-      return dur === 15 ? (appliedCoupon.price15 ?? 7) : (appliedCoupon.price30 ?? 17);
+      return dur === 15 ? (appliedCoupon.price15 ?? 1) : (appliedCoupon.price30 ?? 1);
     }
-    return dur === 15 ? 20 : 35;
+    return dur === 15 ? 1 : 2;
   };
 
   const handleApplyCoupon = async (e: React.FormEvent) => {

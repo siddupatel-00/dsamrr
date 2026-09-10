@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
 
     // Compute real live total revenue in Rupees
     const totalRevenue = dbAds.reduce((acc, curr) => {
-      const rupees = curr.amountPaise ? curr.amountPaise / 100 : (curr.durationDays === 15 ? 20 : 35);
+      const rupees = curr.amountPaise ? curr.amountPaise / 100 : (curr.durationDays === 15 ? 1 : 2);
       return acc + rupees;
     }, 0);
 

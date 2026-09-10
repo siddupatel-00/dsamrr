@@ -223,7 +223,7 @@ export default function AdsPage() {
           {isCurrentlyVacant && (
             <>
               <Plus className="w-4 h-4" />
-              <span>Claim Slot Live Now (₹20 / ₹35)</span>
+              <span>Claim Slot Live Now (₹1 / ₹2)</span>
             </>
           )}
         </button>

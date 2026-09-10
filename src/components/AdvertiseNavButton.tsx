@@ -171,7 +171,7 @@ export function AdvertiseNavButton() {
                       className="w-full py-2 rounded-xl text-xs font-bold font-sans bg-emerald-500 hover:bg-emerald-400 text-zinc-950 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Claim Slot (₹20 / ₹35)</span>
+                      <span>Claim Slot (₹1 / ₹2)</span>
                     </button>
                   </div>
                 ))}
