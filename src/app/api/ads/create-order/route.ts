@@ -6,23 +6,14 @@ import { initDb } from "@/db/init";
 import { ads } from "@/db/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { STANDARD_AD_SLOTS } from "@/lib/adsData";
-import { getCurrentUser } from "@/lib/requestAuth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
     await initDb();
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, error: "Please sign in to your account to book an advertisement." },
-        { status: 401 }
-      );
-    }
-
     const body = await req.json();
-    const { slotId, duration, targetUrl, imageUrl, name, tagline, isPrebook, couponCode } = body;
+    const { slotId, duration, targetUrl, imageUrl, name, tagline, email, isPrebook, couponCode } = body;
 
     // 1. Strict Server-Side Pricing Enforcement
     const durationDays = Number(duration) === 15 ? 15 : 30;
@@ -41,9 +32,9 @@ export async function POST(req: NextRequest) {
       amountPaise = 100; // ₹1 for both 15d and 30d
     }
 
-    if (!slotId || !name || !targetUrl) {
+    if (!slotId || !name || !targetUrl || !email) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields: slotId, name, targetUrl" },
+        { success: false, error: "Missing required fields: slotId, name, targetUrl, email" },
         { status: 400 }
       );
     }

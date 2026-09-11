@@ -8,7 +8,6 @@ import {
   sendAdPrebookConfirmationEmail,
 } from "@/lib/mailer";
 import { eq } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/requestAuth";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -26,16 +25,12 @@ function sanitizeUrl(rawUrl: string): string | null {
 export async function POST(req: NextRequest) {
   try {
     await initDb();
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json(
-        { success: false, error: "Please sign in to your account to claim an advertisement." },
-        { status: 401 }
-      );
-    }
-
     const body = await req.json();
     const { slotId, name, tagline, targetUrl, imageUrl, email, durationDays, isPrebook, couponCode } = body;
+
+    if (!email || !email.trim()) {
+      return NextResponse.json({ success: false, error: "A valid email address is required to receive confirmation." }, { status: 400 });
+    }
 
     // 1. Validate coupon code server-side
     const cleanCoupon = (couponCode || "").trim().toUpperCase();
