@@ -136,7 +136,7 @@ function AuthForm() {
       }
 
       // Directly open user's profile on first signup so they can immediately link their accounts
-      const profileUrl = verifyData.user?.username ? `/u/${verifyData.user.username}` : "/settings/verify";
+      const profileUrl = verifyData.user?.username ? `/${verifyData.user.username}` : "/settings/verify";
       await authenticateSession(email.trim(), password.trim(), profileUrl);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to complete signup.");

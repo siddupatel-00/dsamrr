@@ -94,6 +94,17 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    const RESERVED_USERNAMES = [
+      "ads", "analytics", "api", "auth", "map", "prebook", "settings", "u",
+      "admin", "login", "signup", "dashboard", "leaderboard", "favicon.ico", "robots.txt"
+    ];
+    if (RESERVED_USERNAMES.includes(cleanUsername)) {
+      return NextResponse.json(
+        { success: false, error: "This username is reserved." },
+        { status: 400 }
+      );
+    }
+
     // Check if new username is already taken by someone else
     if (cleanUsername !== currentUser.username) {
       const [takenUsername] = await db

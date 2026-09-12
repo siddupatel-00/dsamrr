@@ -231,7 +231,7 @@ function VerifySettingsContent() {
 
   const handleBack = () => {
     if (username) {
-      window.location.href = `/u/${username}`;
+      window.location.href = `/${username}`;
     } else {
       window.history.back();
     }
@@ -348,7 +348,7 @@ function VerifySettingsContent() {
 
             <div className="pt-2">
               <Link
-                href={`/u/${username}`}
+                href={`/${username}`}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs font-mono transition"
               >
                 <span>View Updated Profile</span>
@@ -598,7 +598,7 @@ function VerifySettingsContent() {
                       <span>Account is verified & active on leaderboard!</span>
                     </div>
                     <Link
-                      href={`/u/${username}`}
+                      href={`/${username}`}
                       className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition"
                     >
                       Done • View Profile

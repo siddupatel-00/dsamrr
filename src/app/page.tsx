@@ -105,7 +105,7 @@ export default function LeaderboardPage() {
   const handleUserClick = (e: React.MouseEvent, username: string) => {
     if (!session?.user) {
       e.preventDefault();
-      router.push(`/auth?callbackUrl=/u/${username}`);
+      router.push(`/auth?callbackUrl=/${username}`);
     }
   };
 
@@ -527,7 +527,7 @@ export default function LeaderboardPage() {
                         {/* Programmer */}
                         <td className="py-2.5 px-3">
                           <Link
-                            href={`/u/${entry.username}`}
+                            href={`/${entry.username}`}
                             onClick={(e) => handleUserClick(e, entry.username)}
                             className="flex items-center gap-2.5 font-sans"
                           >

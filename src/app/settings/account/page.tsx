@@ -138,7 +138,7 @@ function AccountSettingsContent() {
 
   const handleBack = () => {
     if (username) {
-      router.push(`/u/${username}`);
+      router.push(`/${username}`);
     } else {
       router.back();
     }
@@ -187,7 +187,7 @@ function AccountSettingsContent() {
               />
             </div>
             <p className="text-[11px] text-zinc-500 font-sans">
-              Your profile will be available at /u/{username || "..."}
+              Your profile will be available at /{username || "..."}
             </p>
           </div>
 

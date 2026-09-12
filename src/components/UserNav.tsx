@@ -62,7 +62,7 @@ export function UserNav() {
           </div>
 
           <Link
-            href={`/u/${username}`}
+            href={`/${username}`}
             onClick={() => setDropdownOpen(false)}
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-zinc-800/70 text-zinc-300 hover:text-white transition"
           >
