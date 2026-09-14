@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Script from "next/script";
 import { Zap, Check, ArrowRight, X, Sparkles, Star, GitCommit, ShieldCheck } from "lucide-react";
 
@@ -23,11 +24,16 @@ export function ProUpgradeModal({
   onSuccess,
   defaultGithubHandle = "",
 }: ProUpgradeModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [duration, setDuration] = useState<15 | 30>(15);
   const [githubHandle, setGithubHandle] = useState(defaultGithubHandle);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -111,13 +117,13 @@ export function ProUpgradeModal({
     }
   };
 
-  return (
+  const modalContent = isOpen && mounted ? (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150 font-sans">
-        <div className="relative w-full max-w-md bg-[#0e0f14] border border-[#1f2128] rounded-3xl p-6 sm:p-7 shadow-[0_30px_90px_rgba(0,0,0,0.9)] text-zinc-100 space-y-5">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150 font-sans">
+        <div className="relative w-full max-w-md bg-[#0e0f14] border border-[#1f2128] rounded-3xl p-6 sm:p-7 shadow-[0_30px_90px_rgba(0,0,0,0.9)] text-zinc-100 space-y-4 my-auto max-h-[92vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-[#1f2128] pb-4">
+          <div className="flex items-center justify-between border-b border-[#1f2128] pb-3.5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-amber-950/80 border border-amber-800/80 flex items-center justify-center text-amber-400">
                 <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
@@ -254,5 +260,8 @@ export function ProUpgradeModal({
         </div>
       </div>
     </>
-  );
+  ) : null;
+
+  if (typeof document === "undefined" || !mounted) return null;
+  return createPortal(modalContent, document.body);
 }
