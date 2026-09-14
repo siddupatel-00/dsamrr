@@ -28,23 +28,59 @@ export async function POST(req: NextRequest) {
       razorpay_signature,
       duration = 15,
       githubHandle,
+      couponCode,
     } = body;
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    const isMock =
-      !keySecret ||
-      keySecret === "mock_secret" ||
-      String(razorpay_order_id).startsWith("order_mock") ||
-      String(razorpay_order_id).startsWith("order_");
+    const cleanCoupon = (couponCode || "").trim().toUpperCase();
 
-    if (!isMock && keySecret) {
-      const generatedSignature = crypto
-        .createHmac("sha256", keySecret)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest("hex");
+    if (cleanCoupon === "FIRST3") {
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'FIRST3'`);
+      const used = Number(redemptions.rows[0]?.count || 0);
+      if (used >= 3) {
+        return NextResponse.json(
+          { success: false, error: "Coupon FIRST3 has reached its maximum limit (3/3 used)." },
+          { status: 400 }
+        );
+      }
 
-      if (generatedSignature !== razorpay_signature) {
-        return NextResponse.json({ success: false, error: "Invalid payment signature" }, { status: 400 });
+      await client.execute({
+        sql: `INSERT INTO coupon_redemptions (id, code, slot_id, advertiser_email) VALUES (?, ?, ?, ?)`,
+        args: [
+          crypto.randomUUID(),
+          "FIRST3",
+          `pro-user-${sessionUser.id}`,
+          sessionUser.email || sessionUser.username || null,
+        ],
+      });
+    } else {
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
+      const isMock =
+        !keySecret ||
+        keySecret === "mock_secret" ||
+        String(razorpay_order_id).startsWith("order_mock") ||
+        String(razorpay_order_id).startsWith("order_");
+
+      if (!isMock && keySecret) {
+        const generatedSignature = crypto
+          .createHmac("sha256", keySecret)
+          .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+          .digest("hex");
+
+        if (generatedSignature !== razorpay_signature) {
+          return NextResponse.json({ success: false, error: "Invalid payment signature" }, { status: 400 });
+        }
+      }
+
+      if (cleanCoupon === "CLAUDE10") {
+        await client.execute({
+          sql: `INSERT INTO coupon_redemptions (id, code, slot_id, advertiser_email) VALUES (?, ?, ?, ?)`,
+          args: [
+            crypto.randomUUID(),
+            "CLAUDE10",
+            `pro-user-${sessionUser.id}`,
+            sessionUser.email || sessionUser.username || null,
+          ],
+        });
       }
     }
 

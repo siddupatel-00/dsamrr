@@ -31,13 +31,82 @@ export function ProUpgradeModal({
   const [errorMsg, setErrorMsg] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountPercent?: number;
+    discountType?: string;
+    price15?: number;
+    price30?: number;
+    message?: string;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const price = duration === 30 ? 2 : 1;
+  const getPrice = (dur: 15 | 30) => {
+    if (appliedCoupon?.discountPercent === 100) return 0;
+    if (appliedCoupon?.discountType === "custom_price") {
+      return dur === 15 ? (appliedCoupon.price15 ?? 1) : (appliedCoupon.price30 ?? 1);
+    }
+    const base = dur === 30 ? 2 : 1;
+    if (appliedCoupon?.discountPercent) {
+      return Math.max(1, Math.round(base * (1 - appliedCoupon.discountPercent / 100)));
+    }
+    return base;
+  };
+
+  const price = getPrice(duration);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+
+    try {
+      const res = await fetch("/api/ads/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponInput.trim() }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.valid) {
+        setAppliedCoupon({
+          code: data.code || couponInput.trim().toUpperCase(),
+          discountPercent: data.discountPercent || 0,
+          discountType: data.discountType,
+          price15: data.price15,
+          price30: data.price30,
+          message: data.message || "Coupon applied successfully!",
+        });
+        setCouponError("");
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(data.error || "Invalid coupon code.");
+      }
+    } catch (err: any) {
+      setCouponError(err.message || "Failed to validate coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +114,43 @@ export function ProUpgradeModal({
     setErrorMsg("");
 
     try {
+      // 0. If 100% discount, bypass Razorpay and activate Pro directly
+      if (price === 0) {
+        const verifyRes = await fetch("/api/pro/verify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            razorpay_order_id: `free_${appliedCoupon?.code || "coupon"}`,
+            razorpay_payment_id: `free_pay_${Date.now()}`,
+            razorpay_signature: "free_coupon",
+            duration,
+            githubHandle: githubHandle.trim(),
+            couponCode: appliedCoupon?.code,
+          }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (verifyData.success) {
+          setSuccess(true);
+          setTimeout(() => {
+            if (onSuccess) onSuccess();
+            onClose();
+            window.location.reload();
+          }, 1500);
+          return;
+        } else {
+          throw new Error(verifyData.error || "Failed to activate free Pro membership");
+        }
+      }
+
       // 1. Create order
       const orderRes = await fetch("/api/pro/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ durationDays: duration }),
+        body: JSON.stringify({
+          durationDays: duration,
+          couponCode: appliedCoupon?.code,
+        }),
       });
 
       const orderData = await orderRes.json();
@@ -79,6 +180,7 @@ export function ProUpgradeModal({
                   razorpay_signature: response.razorpay_signature,
                   duration,
                   githubHandle: githubHandle.trim(),
+                  couponCode: appliedCoupon?.code,
                 }),
               });
 
@@ -120,8 +222,14 @@ export function ProUpgradeModal({
   const modalContent = isOpen && mounted ? (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150 font-sans">
-        <div className="relative w-full max-w-md bg-[#0e0f14] border border-[#1f2128] rounded-3xl p-6 sm:p-7 shadow-[0_30px_90px_rgba(0,0,0,0.9)] text-zinc-100 space-y-4 my-auto max-h-[92vh] overflow-y-auto">
+      <div
+        onClick={onClose}
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-150 font-sans cursor-pointer"
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-md bg-[#0e0f14] border border-[#1f2128] rounded-3xl p-6 sm:p-7 shadow-[0_30px_90px_rgba(0,0,0,0.9)] text-zinc-100 space-y-4 my-auto max-h-[92vh] overflow-y-auto cursor-default"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#1f2128] pb-3.5">
             <div className="flex items-center gap-2.5">
@@ -215,7 +323,7 @@ export function ProUpgradeModal({
                     }`}
                   >
                     <span className="text-sm font-sans font-extrabold text-white">15 Days</span>
-                    <span className="text-[11px] text-amber-400 mt-0.5">₹1 total</span>
+                    <span className="text-[11px] text-amber-400 mt-0.5">₹{getPrice(15)} total</span>
                   </button>
 
                   <button
@@ -228,9 +336,67 @@ export function ProUpgradeModal({
                     }`}
                   >
                     <span className="text-sm font-sans font-extrabold text-white">30 Days</span>
-                    <span className="text-[11px] text-amber-400 mt-0.5">₹2 total</span>
+                    <span className="text-[11px] text-amber-400 mt-0.5">₹{getPrice(30)} total</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Coupon Code Section */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-zinc-300 font-medium">Coupon Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. FIRST3"
+                    value={couponInput}
+                    onChange={(e) => {
+                      setCouponInput(e.target.value);
+                      if (couponError) setCouponError("");
+                    }}
+                    disabled={Boolean(appliedCoupon)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-[#15171c] border border-[#262933] text-zinc-100 text-xs focus:outline-none focus:border-amber-500/80 uppercase font-mono disabled:opacity-60"
+                  />
+                  {appliedCoupon ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponInput("");
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-mono transition cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                      className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {couponLoading ? "..." : "Apply"}
+                    </button>
+                  )}
+                </div>
+
+                {appliedCoupon && (
+                  <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-400 text-xs font-mono flex items-center justify-between">
+                    <span className="truncate pr-2">{appliedCoupon.message}</span>
+                    <span className="font-bold shrink-0">
+                      {appliedCoupon.discountPercent === 100
+                        ? "100% FREE"
+                        : appliedCoupon.discountType === "custom_price"
+                        ? "₹1 DEAL"
+                        : `${appliedCoupon.discountPercent}% OFF`}
+                    </span>
+                  </div>
+                )}
+
+                {couponError && (
+                  <div className="text-rose-400 text-xs font-mono">
+                    {couponError}
+                  </div>
+                )}
               </div>
 
               {errorMsg && (
@@ -247,6 +413,12 @@ export function ProUpgradeModal({
               >
                 {loading ? (
                   <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                ) : price === 0 ? (
+                  <>
+                    <Zap className="w-3.5 h-3.5 fill-zinc-950" />
+                    <span>Activate Free DSAMRR Pro (₹0)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
                 ) : (
                   <>
                     <Zap className="w-3.5 h-3.5 fill-zinc-950" />

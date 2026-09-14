@@ -19,11 +19,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { durationDays = 15 } = body;
+    const { durationDays = 15, couponCode } = body;
 
     // Pricing: ₹1 for 15 days, ₹2 for 30 days
     const duration = durationDays === 30 ? 30 : 15;
-    const amountPaise = duration === 30 ? 200 : 100;
+    let amountPaise = duration === 30 ? 200 : 100;
+
+    const cleanCoupon = (couponCode || "").trim().toUpperCase();
+    if (cleanCoupon === "CLAUDE10") {
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10'`);
+      const used = Number(redemptions.rows[0]?.count || 0);
+      if (used < 7) {
+        amountPaise = 100; // 15d or 30d for ₹1
+      }
+    }
 
     const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
