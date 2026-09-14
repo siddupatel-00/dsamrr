@@ -392,6 +392,24 @@ export default async function UserProfilePage({ params }: PageProps) {
         </div>
       )}
 
+      {/* Anonymous Mode Prompt for Owner if not enabled */}
+      {!isAnonymousMode && isOwner && (
+        <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-zinc-400 text-xs flex items-center justify-between font-sans">
+          <div className="flex items-center gap-2">
+            <span>👻</span>
+            <span>
+              Want to keep your identity and profile private on the leaderboard?
+            </span>
+          </div>
+          <Link
+            href="/settings/account"
+            className="text-amber-400 hover:text-amber-300 font-medium text-xs shrink-0 flex items-center gap-1 transition"
+          >
+            <span>Enable Anonymous Mode &rarr;</span>
+          </Link>
+        </div>
+      )}
+
       {/* Top Banner Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
         <div className="flex items-center gap-4">

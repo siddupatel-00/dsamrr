@@ -43,6 +43,7 @@ export function ProUpgradeModal({
   } | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -126,6 +127,7 @@ export function ProUpgradeModal({
             duration,
             githubHandle: githubHandle.trim(),
             couponCode: appliedCoupon?.code,
+            isAnonymous,
           }),
         });
 
@@ -181,6 +183,7 @@ export function ProUpgradeModal({
                   duration,
                   githubHandle: githubHandle.trim(),
                   couponCode: appliedCoupon?.code,
+                  isAnonymous,
                 }),
               });
 
@@ -292,7 +295,9 @@ export function ProUpgradeModal({
               <div className="space-y-1.5">
                 <label className="text-xs text-zinc-300 font-medium flex items-center justify-between">
                   <span>Your GitHub Username</span>
-                  <span className="text-[10px] text-zinc-500 font-mono">(to showcase)</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">
+                    {isAnonymous ? "(optional in ghost mode)" : "(to showcase)"}
+                  </span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-mono">
@@ -300,13 +305,34 @@ export function ProUpgradeModal({
                   </span>
                   <input
                     type="text"
-                    required
+                    required={!isAnonymous}
                     placeholder="octocat"
                     value={githubHandle}
                     onChange={(e) => setGithubHandle(e.target.value)}
                     className="w-full pl-7 pr-3 py-2 rounded-xl bg-[#15171c] border border-[#262933] text-zinc-100 text-xs focus:outline-none focus:border-amber-500/80 font-mono"
                   />
                 </div>
+              </div>
+
+              {/* Anonymous / Ghost Mode Toggle */}
+              <div className="p-3 rounded-2xl bg-[#15171c] border border-[#262933] flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-semibold text-zinc-200 flex items-center gap-1.5 font-sans">
+                    <span>👻 Keep profile anonymous (Ghost Mode)</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 font-sans leading-tight">
+                    Mask your name and hide external links on the public leaderboard.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAnonymous(!isAnonymous)}
+                  className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center shrink-0 ${
+                    isAnonymous ? "bg-amber-500 justify-end" : "bg-zinc-700 justify-start"
+                  }`}
+                >
+                  <div className="w-4 h-4 rounded-full bg-white shadow-md transition-transform" />
+                </button>
               </div>
 
               {/* Plan Duration Selector */}

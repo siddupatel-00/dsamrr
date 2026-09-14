@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       duration = 15,
       githubHandle,
       couponCode,
+      isAnonymous,
     } = body;
 
     const cleanCoupon = (couponCode || "").trim().toUpperCase();
@@ -108,9 +109,16 @@ export async function POST(req: NextRequest) {
         pro_expires_at = ?, 
         github_handle = COALESCE(?, github_handle),
         github_stats = COALESCE(?, github_stats),
+        is_anonymous = COALESCE(?, is_anonymous),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
-      args: [proExpiresAt, cleanGithub || null, githubStatsJson, sessionUser.id],
+      args: [
+        proExpiresAt,
+        cleanGithub || null,
+        githubStatsJson,
+        isAnonymous !== undefined ? (isAnonymous ? 1 : 0) : null,
+        sessionUser.id,
+      ],
     });
 
     invalidateLeaderboardCache();

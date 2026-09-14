@@ -97,6 +97,35 @@ function AccountSettingsContent() {
     }
   };
 
+  const handleToggleAnonymous = async () => {
+    const nextVal = !isAnonymous;
+    setIsAnonymous(nextVal);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/users/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isAnonymous: nextVal,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSavedMsg(
+          nextVal
+            ? "👻 Anonymous Mode activated! Your identity is hidden on the leaderboard."
+            : "Anonymous Mode turned off."
+        );
+        router.refresh();
+        setTimeout(() => setSavedMsg(""), 3500);
+      } else {
+        setErrorMsg(data.error || "Failed to update anonymous mode.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to update anonymous mode.");
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (confirmText !== "delete my account") return;
     setDeleting(true);
@@ -245,7 +274,7 @@ function AccountSettingsContent() {
             </div>
             <button
               type="button"
-              onClick={() => setIsAnonymous(!isAnonymous)}
+              onClick={handleToggleAnonymous}
               className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 cursor-pointer flex items-center shrink-0 ${
                 isAnonymous ? "bg-emerald-500 justify-end" : "bg-zinc-700 justify-start"
               }`}

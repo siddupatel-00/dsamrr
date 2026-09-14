@@ -5,6 +5,7 @@ import { db, client } from "@/db";
 import { initDb } from "@/db/init";
 import { users, platformAccounts } from "@/db/schema";
 import { eq, and, ne } from "drizzle-orm";
+import { invalidateLeaderboardCache } from "@/lib/engine/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +147,8 @@ export async function PATCH(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(users.id, currentUser.id));
+
+    invalidateLeaderboardCache();
 
     return NextResponse.json({
       success: true,
