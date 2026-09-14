@@ -38,7 +38,7 @@ interface PageProps {
 }
 
 const RESERVED_USERNAMES = [
-  "ads", "analytics", "api", "auth", "map", "prebook", "settings", "u",
+  "ads", "analytics", "api", "auth", "map", "prebook", "settings", "u", "pro",
   "admin", "login", "signup", "dashboard", "leaderboard", "favicon.ico", "robots.txt"
 ];
 
@@ -54,6 +54,33 @@ const SUPPORTED_PLATFORMS = [
 export default async function UserProfilePage({ params }: PageProps) {
   await initDb();
   const { username } = params;
+
+  if (username.toLowerCase() === "anonymous") {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-[#0c0d11] border border-[#1f2128] rounded-3xl p-8 text-center space-y-4 shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-2xl">
+            👻
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="text-lg font-bold text-white font-sans">Anonymous Developer Profile</h1>
+            <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+              This developer has enabled Anonymous / Ghost Mode. Their coding activity contributes to the leaderboard rankings, but their identity, usernames, and profiles are kept strictly private.
+            </p>
+          </div>
+          <div className="pt-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 font-mono transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Leaderboard</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (RESERVED_USERNAMES.includes(username.toLowerCase())) {
     notFound();

@@ -429,8 +429,15 @@ export default function LeaderboardPage() {
                     return (
                       <tr
                         key={entry.userId}
-                        onClick={(e) => handleUserClick(e, entry.username)}
-                        className="hover:bg-[#15171d]/60 transition cursor-pointer group"
+                        onClick={(e) => {
+                          if (entry.isAnonymous) return;
+                          handleUserClick(e, entry.username);
+                        }}
+                        className={`transition ${
+                          entry.isAnonymous
+                            ? "cursor-default opacity-85"
+                            : "hover:bg-[#15171d]/60 cursor-pointer group"
+                        }`}
                       >
                         {/* Rank */}
                         <td className="py-2.5 px-3 text-center text-xs font-bold font-mono">
@@ -447,56 +454,79 @@ export default function LeaderboardPage() {
 
                         {/* Programmer */}
                         <td className="py-2.5 px-3">
-                          <Link
-                            href={`/${entry.username}`}
-                            onClick={(e) => handleUserClick(e, entry.username)}
-                            className="flex items-center gap-2.5 font-sans"
-                          >
-                            <img
-                              src={
-                                entry.isAnonymous
-                                  ? "https://api.dicebear.com/7.x/bottts/svg?seed=anonymous"
-                                  : (entry.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${entry.username}`)
-                              }
-                              alt="Coder"
-                              className={`w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700/80 object-cover shrink-0 ${
-                                entry.isAnonymous ? "filter blur-[1px]" : ""
-                              }`}
-                            />
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`font-semibold text-zinc-100 group-hover:text-white transition text-xs ${
-                                    entry.isAnonymous ? "filter blur-[3.5px] select-none text-zinc-400" : ""
-                                  }`}
-                                >
-                                  {entry.isAnonymous ? "Anonymous Coder" : entry.username}
-                                </span>
-                                {entry.isAnonymous && (
+                          {entry.isAnonymous ? (
+                            <div
+                              className="flex items-center gap-2.5 font-sans cursor-default select-none"
+                              title="Profile is hidden in Anonymous / Ghost Mode"
+                            >
+                              <img
+                                src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous"
+                                alt="Anonymous Coder"
+                                className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700/80 object-cover shrink-0 filter blur-[1px]"
+                              />
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold filter blur-[3.5px] select-none text-zinc-400 text-xs">
+                                    Anonymous Coder
+                                  </span>
                                   <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-mono">
                                     👻 anon
                                   </span>
-                                )}
-                                {isVerified && (
-                                  <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-emerald-950/50 text-emerald-400 border border-emerald-800/60">
-                                    <ShieldCheck className="w-2.5 h-2.5" />
-                                    <span>verified</span>
+                                  {isVerified && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-emerald-950/50 text-emerald-400 border border-emerald-800/60">
+                                      <ShieldCheck className="w-2.5 h-2.5" />
+                                      <span>verified</span>
+                                    </span>
+                                  )}
+                                  {entry.isPro && (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80 font-bold shadow-sm">
+                                      <Zap className="w-2.5 h-2.5 text-amber-400" />
+                                      <span>PRO</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <Link
+                              href={`/${entry.username}`}
+                              onClick={(e) => handleUserClick(e, entry.username)}
+                              className="flex items-center gap-2.5 font-sans"
+                            >
+                              <img
+                                src={
+                                  entry.avatarUrl ||
+                                  `https://api.dicebear.com/7.x/bottts/svg?seed=${entry.username}`
+                                }
+                                alt="Coder"
+                                className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700/80 object-cover shrink-0"
+                              />
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-zinc-100 group-hover:text-white transition text-xs">
+                                    {entry.username}
                                   </span>
-                                )}
-                                {entry.isPro && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80 font-bold shadow-sm">
-                                    <Zap className="w-2.5 h-2.5 text-amber-400" />
-                                    <span>PRO</span>
-                                  </span>
+                                  {isVerified && (
+                                    <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[9px] font-mono bg-emerald-950/50 text-emerald-400 border border-emerald-800/60">
+                                      <ShieldCheck className="w-2.5 h-2.5" />
+                                      <span>verified</span>
+                                    </span>
+                                  )}
+                                  {entry.isPro && (
+                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80 font-bold shadow-sm">
+                                      <Zap className="w-2.5 h-2.5 text-amber-400" />
+                                      <span>PRO</span>
+                                    </span>
+                                  )}
+                                </div>
+                                {entry.name && (
+                                  <div className="text-[10px] text-zinc-500 line-clamp-1 font-sans">
+                                    {entry.name}
+                                  </div>
                                 )}
                               </div>
-                              {entry.name && !entry.isAnonymous && (
-                                <div className="text-[10px] text-zinc-500 line-clamp-1 font-sans">
-                                  {entry.name}
-                                </div>
-                              )}
-                            </div>
-                          </Link>
+                            </Link>
+                          )}
                         </td>
 
                         {/* Linked Handles */}

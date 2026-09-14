@@ -96,7 +96,8 @@ export async function PATCH(req: NextRequest) {
 
     const RESERVED_USERNAMES = [
       "ads", "analytics", "api", "auth", "map", "prebook", "settings", "u",
-      "admin", "login", "signup", "dashboard", "leaderboard", "favicon.ico", "robots.txt"
+      "admin", "login", "signup", "dashboard", "leaderboard", "favicon.ico", "robots.txt",
+      "anonymous", "pro"
     ];
     if (RESERVED_USERNAMES.includes(cleanUsername)) {
       return NextResponse.json(

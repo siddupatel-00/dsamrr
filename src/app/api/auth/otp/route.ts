@@ -143,7 +143,10 @@ export async function POST(req: NextRequest) {
       if (!existingUser) {
         const baseUsername = normalizedEmail.split("@")[0].replace(/[^a-z0-9]/g, "");
         const uniqueSuffix = crypto.randomBytes(2).toString("hex");
-        const username = baseUsername || `user_${uniqueSuffix}`;
+        const RESERVED = ["ads", "analytics", "api", "auth", "map", "prebook", "settings", "u", "admin", "login", "signup", "dashboard", "leaderboard", "anonymous", "pro"];
+        const username = (!baseUsername || RESERVED.includes(baseUsername.toLowerCase()))
+          ? `user_${uniqueSuffix}`
+          : baseUsername;
         const newUserId = `user_${crypto.randomUUID()}`;
 
         if (!password || typeof password !== "string" || password.length < 6) {

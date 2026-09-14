@@ -248,7 +248,7 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
       avatarUrl: isAnon ? "https://api.dicebear.com/7.x/bottts/svg?seed=anonymous" : u.avatarUrl,
       isAnonymous: isAnon,
       isPro: Boolean(u.isPro && (!u.proExpiresAt || u.proExpiresAt >= currentDateUtc)),
-      githubHandle: (u.isPro && (!u.proExpiresAt || u.proExpiresAt >= currentDateUtc) && u.showGithub) ? u.githubHandle : null,
+      githubHandle: (!isAnon && u.isPro && (!u.proExpiresAt || u.proExpiresAt >= currentDateUtc) && u.showGithub) ? u.githubHandle : null,
       platformAccounts: userAccounts.map((a) => ({
         platform: a.platform as any,
         username: isAnon ? "••••••••" : a.username,
