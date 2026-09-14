@@ -18,7 +18,7 @@ import {
   EyeOff,
 } from "lucide-react";
 
-type PlatformType = "leetcode" | "codeforces" | "geeksforgeeks" | "hackerrank" | "codechef" | "atcoder";
+type PlatformType = "leetcode" | "codeforces" | "geeksforgeeks" | "hackerrank" | "codechef" | "atcoder" | "github";
 
 const PLATFORMS: { id: PlatformType; label: string; short: string; url: string; bioField: string }[] = [
   { id: "leetcode", label: "LeetCode", short: "LC", url: "https://leetcode.com/profile/", bioField: "About Me / Summary" },
@@ -27,6 +27,7 @@ const PLATFORMS: { id: PlatformType; label: string; short: string; url: string; 
   { id: "hackerrank", label: "HackerRank", short: "HR", url: "https://www.hackerrank.com/settings/profile", bioField: "About / Bio" },
   { id: "codechef", label: "CodeChef", short: "CC", url: "https://www.codechef.com/settings", bioField: "About Me / Name" },
   { id: "atcoder", label: "AtCoder", short: "AC", url: "https://atcoder.jp/settings", bioField: "Affiliation / Bio" },
+  { id: "github", label: "GitHub", short: "GH", url: "https://github.com/settings/profile", bioField: "Bio" },
 ];
 
 function VerifySettingsContent() {

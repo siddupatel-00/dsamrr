@@ -460,12 +460,6 @@ export default function LeaderboardPage() {
                                       <span>verified</span>
                                     </span>
                                   )}
-                                  {entry.isPro && (
-                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80 font-bold shadow-sm">
-                                      <Zap className="w-2.5 h-2.5 text-amber-400" />
-                                      <span>PRO</span>
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -494,12 +488,6 @@ export default function LeaderboardPage() {
                                       <span>verified</span>
                                     </span>
                                   )}
-                                  {entry.isPro && (
-                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80 font-bold shadow-sm">
-                                      <Zap className="w-2.5 h-2.5 text-amber-400" />
-                                      <span>PRO</span>
-                                    </span>
-                                  )}
                                 </div>
                                 {entry.name && (
                                   <div className="text-[10px] text-zinc-500 line-clamp-1 font-sans">
@@ -514,16 +502,16 @@ export default function LeaderboardPage() {
                         {/* Linked Handles */}
                         <td className="py-2.5 px-3 hidden md:table-cell">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {entry.isPro && entry.githubHandle && (
+                            {entry.githubHandle && (
                               <a
                                 href={`https://github.com/${entry.githubHandle}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/30 hover:bg-amber-900/40 border border-amber-800/60 text-amber-300 font-mono flex items-center gap-1 transition"
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/70 text-zinc-200 font-mono flex items-center gap-1 transition"
                                 title={`GitHub: @${entry.githubHandle}`}
                               >
-                                <span className="font-bold text-[9px]">GH</span>
+                                <span className="font-bold text-[9px] text-zinc-400">GH</span>
                                 <span>@{entry.githubHandle}</span>
                               </a>
                             )}

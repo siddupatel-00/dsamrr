@@ -30,7 +30,7 @@ export const platformAccounts = sqliteTable("platform_accounts", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   platform: text("platform", {
-    enum: ["leetcode", "codeforces", "geeksforgeeks", "hackerrank", "codechef", "atcoder"],
+    enum: ["leetcode", "codeforces", "geeksforgeeks", "hackerrank", "codechef", "atcoder", "github"],
   }).notNull(),
   username: text("username").notNull(),
   verifiedStatus: text("verified_status", {
@@ -54,7 +54,7 @@ export const dailySnapshots = sqliteTable("daily_snapshots", {
     .notNull()
     .references(() => platformAccounts.id, { onDelete: "cascade" }),
   platform: text("platform", {
-    enum: ["leetcode", "codeforces", "geeksforgeeks", "hackerrank", "codechef", "atcoder"],
+    enum: ["leetcode", "codeforces", "geeksforgeeks", "hackerrank", "codechef", "atcoder", "github"],
   }).notNull(),
   problemsSolvedEasy: integer("problems_solved_easy").default(0).notNull(),
   problemsSolvedMedium: integer("problems_solved_medium").default(0).notNull(),

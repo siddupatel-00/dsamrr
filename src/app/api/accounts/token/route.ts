@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { platform, handle } = body;
 
-    const allowedPlatforms = ["leetcode", "codeforces", "geeksforgeeks", "hackerrank", "codechef", "atcoder"];
+    const allowedPlatforms = ["leetcode", "codeforces", "geeksforgeeks", "hackerrank", "codechef", "atcoder", "github"];
     const cleanHandle = typeof handle === "string" ? handle.trim() : "";
     if (!allowedPlatforms.includes(platform) || !cleanHandle || cleanHandle.length > 100) {
       return NextResponse.json(

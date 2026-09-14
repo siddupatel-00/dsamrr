@@ -9,6 +9,7 @@ import {
   fetchCodeChefStats,
   fetchAtCoderStats,
 } from "./multiPlatforms";
+import { fetchGitHubStats } from "./github";
 import crypto from "crypto";
 
 export function generateVerificationToken(): string {
@@ -99,6 +100,17 @@ export async function verifyPlatformAccount(
         score: stats.score,
       };
       rawStats = stats;
+    } else if (account.platform === "github") {
+      const stats = await fetchGitHubStats(account.username);
+      bioContent = bioContent || stats?.bio || "";
+      rawStats = stats;
+      statsData = {
+        easy: 0,
+        medium: 0,
+        hard: 0,
+        total: stats?.publicRepos || 0,
+        score: stats?.stars || 0,
+      };
     }
   } catch (err: any) {
     console.error(`Verification fetch failed for ${account.platform}:`, err);
@@ -121,6 +133,14 @@ export async function verifyPlatformAccount(
         updatedAt: new Date().toISOString(),
       })
       .where(eq(platformAccounts.id, account.id));
+
+    // Update users table for GitHub showcase
+    if (account.platform === "github" && rawStats) {
+      await client.execute({
+        sql: `UPDATE users SET github_handle = ?, github_stats = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        args: [account.username, JSON.stringify(rawStats), account.userId],
+      });
+    }
 
     // 2. Immediately populate snapshot with real scraped problem numbers
     const snapId = `snap_${account.id}_${today}`;

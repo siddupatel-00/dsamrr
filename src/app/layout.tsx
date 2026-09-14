@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Terminal, Trophy, Zap } from "lucide-react";
+import { Terminal, Trophy } from "lucide-react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { UserNav } from "@/components/UserNav";
-import { ProNavButton } from "@/components/ProNavButton";
 import { VisitorCounter } from "@/components/VisitorCounter";
 import "./globals.css";
 
@@ -36,9 +35,6 @@ export default function RootLayout({
                   <Terminal className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
                 <span className="font-bold text-sm tracking-tight font-mono">DSAMRR</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
-                  PRO
-                </span>
               </Link>
 
               <Link
@@ -56,8 +52,6 @@ export default function RootLayout({
             </div>
 
             <div className="flex items-center gap-3">
-              <ProNavButton />
-
               {/* User Authentication & Profile Menu */}
               <UserNav />
             </div>

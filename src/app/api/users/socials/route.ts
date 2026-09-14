@@ -5,6 +5,8 @@ import { db } from "@/db";
 import { initDb } from "@/db/init";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { fetchGitHubStats } from "@/lib/platforms/github";
+import { invalidateLeaderboardCache } from "@/lib/engine/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -33,11 +35,20 @@ export async function POST(req: NextRequest) {
     const userEmail = sessionUser.email;
     const userId = sessionUser.id;
 
-    const updatePayload = {
+    const cleanGithub = githubHandle?.trim().replace(/^@/, "") || null;
+    let githubStatsJson: string | null = null;
+    if (cleanGithub) {
+      const stats = await fetchGitHubStats(cleanGithub);
+      if (stats) {
+        githubStatsJson = JSON.stringify(stats);
+      }
+    }
+
+    const updatePayload: any = {
       twitterHandle: twitterHandle?.trim() || null,
       instagramHandle: instagramHandle?.trim() || null,
       linkedinHandle: linkedinHandle?.trim() || null,
-      githubHandle: githubHandle?.trim() || null,
+      githubHandle: cleanGithub,
       showTwitter: showTwitter === false ? 0 : 1,
       showInstagram: showInstagram === false ? 0 : 1,
       showLinkedin: showLinkedin === false ? 0 : 1,
@@ -45,11 +56,17 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
+    if (githubStatsJson) {
+      updatePayload.githubStats = githubStatsJson;
+    }
+
     if (userEmail) {
       await db.update(users).set(updatePayload).where(eq(users.email, userEmail));
     } else if (userId) {
       await db.update(users).set(updatePayload).where(eq(users.id, userId));
     }
+
+    invalidateLeaderboardCache();
 
     return NextResponse.json({
       success: true,

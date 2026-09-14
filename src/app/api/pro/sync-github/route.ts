@@ -25,16 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const isPro = Boolean(user.isPro && (!user.proExpiresAt || user.proExpiresAt >= todayStr));
-
-    if (!isPro) {
-      return NextResponse.json(
-        { success: false, error: "DSAMRR Pro subscription is required to sync and display GitHub stats." },
-        { status: 403 }
-      );
-    }
-
     const body = await req.json().catch(() => ({}));
     const handle = (body.githubHandle || user.githubHandle || "").trim().replace(/^@/, "");
 
