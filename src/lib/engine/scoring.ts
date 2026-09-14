@@ -21,6 +21,8 @@ export interface UserLeaderboardEntry {
   name: string | null;
   avatarUrl: string | null;
   isAnonymous?: boolean;
+  isPro?: boolean;
+  githubHandle?: string | null;
   platformAccounts: {
     platform: "leetcode" | "codeforces" | "geeksforgeeks" | "hackerrank" | "codechef" | "atcoder";
     username: string;
@@ -245,6 +247,8 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
       name: isAnon ? "Anonymous Coder" : u.name,
       avatarUrl: isAnon ? "https://api.dicebear.com/7.x/bottts/svg?seed=anonymous" : u.avatarUrl,
       isAnonymous: isAnon,
+      isPro: Boolean(u.isPro && (!u.proExpiresAt || u.proExpiresAt >= currentDateUtc)),
+      githubHandle: (u.isPro && (!u.proExpiresAt || u.proExpiresAt >= currentDateUtc) && u.showGithub) ? u.githubHandle : null,
       platformAccounts: userAccounts.map((a) => ({
         platform: a.platform as any,
         username: isAnon ? "••••••••" : a.username,

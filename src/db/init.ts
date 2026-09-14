@@ -140,6 +140,17 @@ export async function initDb(): Promise<void> {
         `CREATE INDEX IF NOT EXISTS idx_ads_expires ON ads(expires_at);`,
       ]);
 
+      // Safe column additions for Pro Developer Membership
+      try {
+        await client.execute(`ALTER TABLE users ADD COLUMN is_pro INTEGER NOT NULL DEFAULT 0;`);
+      } catch (e) {}
+      try {
+        await client.execute(`ALTER TABLE users ADD COLUMN pro_expires_at TEXT;`);
+      } catch (e) {}
+      try {
+        await client.execute(`ALTER TABLE users ADD COLUMN github_stats TEXT;`);
+      } catch (e) {}
+
       isInitialized = true;
     } catch (err) {
       console.error("InitDB batch note:", err);

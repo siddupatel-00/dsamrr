@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Terminal, Trophy, Zap } from "lucide-react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { UserNav } from "@/components/UserNav";
+import { ProNavButton } from "@/components/ProNavButton";
 import { VisitorCounter } from "@/components/VisitorCounter";
 import "./globals.css";
 
@@ -55,13 +56,7 @@ export default function RootLayout({
             </div>
 
             <div className="flex items-center gap-3">
-              <Link
-                href="/ads"
-                className="flex items-center gap-1.5 text-xs font-mono text-amber-400/90 hover:text-amber-300 transition px-3 py-1.5 rounded-xl bg-amber-950/20 hover:bg-amber-900/30 border border-amber-800/50 cursor-pointer shadow-sm"
-              >
-                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-semibold">Pro Spotlight</span>
-              </Link>
+              <ProNavButton />
 
               {/* User Authentication & Profile Menu */}
               <UserNav />

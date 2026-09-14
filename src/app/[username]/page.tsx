@@ -10,12 +10,14 @@ import {
   Lock,
   Plus,
   RotateCw,
+  Zap,
 } from "lucide-react";
 import { db, client } from "@/db";
 import { initDb } from "@/db/init";
 import { users, platformAccounts, dailySnapshots, streaks } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { ProfileSocialsCard } from "@/components/ProfileSocialsCard";
+import { GitHubProCard } from "@/components/GitHubProCard";
 import { fetchLeetCodeStats } from "@/lib/platforms/leetcode";
 import { fetchCodeforcesStats } from "@/lib/platforms/codeforces";
 import {
@@ -397,6 +399,12 @@ export default async function UserProfilePage({ params }: PageProps) {
                   <span>Verified</span>
                 </span>
               )}
+              {Boolean(user.isPro && (!user.proExpiresAt || user.proExpiresAt >= today)) && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-mono bg-amber-950/80 text-amber-400 border border-amber-800 font-bold shadow-sm">
+                  <Zap className="w-3.5 h-3.5 fill-amber-400" />
+                  <span>PRO</span>
+                </span>
+              )}
             </div>
             <p className="text-xs text-zinc-400 mt-1">
               {isAnonymousMode && !isOwner
@@ -483,6 +491,16 @@ export default async function UserProfilePage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* GitHub Pro Developer Showcase Card */}
+      <GitHubProCard
+        isPro={Boolean(user.isPro && (!user.proExpiresAt || user.proExpiresAt >= today))}
+        proExpiresAt={user.proExpiresAt}
+        githubHandle={user.githubHandle}
+        githubStats={user.githubStats}
+        isOwner={isOwner}
+        profileUsername={user.username}
+      />
 
       {/* Verified DSA Platforms Grid */}
       <div className="space-y-3 pt-2">

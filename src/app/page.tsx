@@ -14,13 +14,6 @@ import {
   Filter,
   Check,
 } from "lucide-react";
-import {
-  TrustMrrSidebar,
-  AdBookingModal,
-  INITIAL_LEFT_ADS,
-  INITIAL_RIGHT_ADS,
-  TrustMrrAd,
-} from "@/components/AdSidebar";
 import { RevenueBanner } from "@/components/RevenueBanner";
 
 type TimeframeType = "today" | "7days" | "thisMonth" | "lastMonth" | "allTime" | "streak";
@@ -55,6 +48,8 @@ interface UserLeaderboardEntry {
   name: string | null;
   avatarUrl: string | null;
   isAnonymous?: boolean;
+  isPro?: boolean;
+  githubHandle?: string | null;
   platformAccounts: {
     platform: "leetcode" | "codeforces" | "geeksforgeeks" | "hackerrank" | "codechef" | "atcoder";
     username: string;
@@ -109,14 +104,8 @@ export default function LeaderboardPage() {
     }
   };
 
-  // Ad slot states
-  const [leftAds, setLeftAds] = useState<TrustMrrAd[]>(INITIAL_LEFT_ADS);
-  const [rightAds, setRightAds] = useState<TrustMrrAd[]>(INITIAL_RIGHT_ADS);
-  const [activeBookingSlot, setActiveBookingSlot] = useState<string | null>(null);
-
   useEffect(() => {
     fetchLeaderboard();
-    fetchActiveAds();
 
     const updateTimer = () => {
       const now = new Date();
@@ -147,50 +136,6 @@ export default function LeaderboardPage() {
     };
   }, []);
 
-  const fetchActiveAds = async () => {
-    try {
-      const res = await fetch("/api/ads");
-      const json = await res.json();
-      if (json.success && Array.isArray(json.ads)) {
-        json.ads.forEach((dbAd: any) => {
-          const colors = [
-            { bg: "bg-[#1c1228]", border: "border-[#331c49]/80", hover: "hover:border-[#522b75]" },
-            { bg: "bg-[#0c1b2c]", border: "border-[#143152]/80", hover: "hover:border-[#215187]" },
-            { bg: "bg-[#0c2217]", border: "border-[#153e2a]/80", hover: "hover:border-[#226343]" },
-            { bg: "bg-[#231514]", border: "border-[#3e211e]/80", hover: "hover:border-[#66352f]" },
-          ];
-          const chosen = colors[Math.floor(Math.random() * colors.length)];
-
-          const formattedAd: TrustMrrAd = {
-            id: dbAd.slotId || dbAd.id,
-            name: dbAd.name,
-            tagline: dbAd.tagline,
-            url: dbAd.targetUrl,
-            logoUrl: dbAd.imageUrl || undefined,
-            bgClass: chosen.bg,
-            borderClass: chosen.border,
-            hoverBorderClass: chosen.hover,
-            logo: dbAd.imageUrl ? (
-              <img
-                src={dbAd.imageUrl}
-                alt={dbAd.name}
-                className="w-7 h-7 rounded-md object-cover bg-zinc-800 border border-white/10"
-              />
-            ) : (
-              <div className="w-7 h-7 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white font-bold text-xs font-mono">
-                {dbAd.name.slice(0, 2).toUpperCase()}
-              </div>
-            ),
-            expiresAt: dbAd.expiresAt,
-            durationDays: dbAd.durationDays,
-          };
-
-          handleAdBooked(formattedAd);
-        });
-      }
-    } catch (e) {}
-  };
-
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
@@ -204,23 +149,6 @@ export default function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleBookAd = (slotId: string) => {
-    if (!session?.user) {
-      router.push(`/auth?callbackUrl=/ads`);
-      return;
-    }
-    setActiveBookingSlot(slotId);
-  };
-
-  const handleAdBooked = (newAd: TrustMrrAd) => {
-    setLeftAds((prev) =>
-      prev.map((ad) => (ad.id === newAd.id ? newAd : ad))
-    );
-    setRightAds((prev) =>
-      prev.map((ad) => (ad.id === newAd.id ? newAd : ad))
-    );
   };
 
   const togglePlatform = (id: string) => {
@@ -345,14 +273,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="w-full flex flex-col xl:grid xl:grid-cols-[210px_1fr_210px] gap-6 xl:gap-8 items-start px-2 sm:px-4">
-      {/* Left Sidebar Sticky Ads */}
-      <TrustMrrSidebar
-        ads={leftAds}
-        position="left"
-        onBookSlot={handleBookAd}
-      />
-
+    <div className="max-w-6xl mx-auto w-full space-y-6 px-2 sm:px-4">
       {/* Center Main Leaderboard Card */}
       <div className="w-full min-w-0">
         <div className="w-full rounded-2xl border border-[#1f2128] bg-[#0e0f12] p-4 sm:p-6 shadow-2xl space-y-4">
@@ -562,6 +483,12 @@ export default function LeaderboardPage() {
                                     <span>verified</span>
                                   </span>
                                 )}
+                                {entry.isPro && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono bg-amber-950/60 text-amber-400 border border-amber-800/80 font-bold shadow-sm">
+                                    <Zap className="w-2.5 h-2.5 text-amber-400" />
+                                    <span>PRO</span>
+                                  </span>
+                                )}
                               </div>
                               {entry.name && !entry.isAnonymous && (
                                 <div className="text-[10px] text-zinc-500 line-clamp-1 font-sans">
@@ -575,7 +502,20 @@ export default function LeaderboardPage() {
                         {/* Linked Handles */}
                         <td className="py-2.5 px-3 hidden md:table-cell">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {visiblePlatforms.length === 0 ? (
+                            {entry.isPro && entry.githubHandle && (
+                              <a
+                                href={`https://github.com/${entry.githubHandle}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/30 hover:bg-amber-900/40 border border-amber-800/60 text-amber-300 font-mono flex items-center gap-1 transition"
+                                title={`GitHub: @${entry.githubHandle}`}
+                              >
+                                <span className="font-bold text-[9px]">GH</span>
+                                <span>@{entry.githubHandle}</span>
+                              </a>
+                            )}
+                            {visiblePlatforms.length === 0 && !entry.githubHandle ? (
                               <span className="text-zinc-600 text-[10px]">—</span>
                             ) : (
                               visiblePlatforms.map((p) => {
@@ -646,22 +586,6 @@ export default function LeaderboardPage() {
         {/* TrustMRR-style Revenue Counter Banner */}
         <RevenueBanner />
       </div>
-
-      {/* Right Sidebar Sticky Ads */}
-      <TrustMrrSidebar
-        ads={rightAds}
-        position="right"
-        onBookSlot={handleBookAd}
-      />
-
-      {/* Booking Modal */}
-      {activeBookingSlot && (
-        <AdBookingModal
-          slotId={activeBookingSlot}
-          onClose={() => setActiveBookingSlot(null)}
-          onBooked={handleAdBooked}
-        />
-      )}
     </div>
   );
 }

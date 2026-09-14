@@ -17,6 +17,9 @@ export const users = sqliteTable("users", {
   showInstagram: integer("show_instagram").default(1).notNull(),
   showLinkedin: integer("show_linkedin").default(1).notNull(),
   showGithub: integer("show_github").default(1).notNull(),
+  isPro: integer("is_pro").default(0).notNull(),
+  proExpiresAt: text("pro_expires_at"), // ISO YYYY-MM-DD
+  githubStats: text("github_stats"), // JSON cached stats
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
   updatedAt: text("updated_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 });
