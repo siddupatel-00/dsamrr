@@ -93,7 +93,6 @@ export default function LeaderboardPage() {
     allTime: [],
     streaks: [],
   });
-  const [timeUntilReset, setTimeUntilReset] = useState("");
 
   const platformDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -107,22 +106,6 @@ export default function LeaderboardPage() {
   useEffect(() => {
     fetchLeaderboard();
 
-    const updateTimer = () => {
-      const now = new Date();
-      const nextMidnight = new Date();
-      nextMidnight.setUTCHours(24, 0, 0, 0);
-      const diffMs = nextMidnight.getTime() - now.getTime();
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diffMs % (1000 * 60)) / 1000);
-      setTimeUntilReset(
-        `${String(hours).padStart(2, "0")}h ${String(mins).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`
-      );
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
     const handleClickOutside = (e: MouseEvent) => {
       if (platformDropdownRef.current && !platformDropdownRef.current.contains(e.target as Node)) {
         setPlatformDropdownOpen(false);
@@ -131,7 +114,6 @@ export default function LeaderboardPage() {
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      clearInterval(interval);
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
@@ -284,7 +266,7 @@ export default function LeaderboardPage() {
                 Leaderboard
               </h1>
               <p className="text-xs text-zinc-500 font-mono mt-0.5">
-                Auto-updates every 2h • UTC reset in <span className="text-zinc-300">{timeUntilReset || "--:--:--"}</span>
+                Auto-updates every 2h
               </p>
             </div>
 
