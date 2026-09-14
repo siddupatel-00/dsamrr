@@ -15,14 +15,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (cleanCode === "FIRST3") {
-      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'FIRST3'`);
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'FIRST3' AND slot_id LIKE 'pro-%'`);
       const used = Number(redemptions.rows[0]?.count || 0);
 
       if (used >= 3) {
         return NextResponse.json({
           success: false,
           valid: false,
-          error: "This coupon code has reached its maximum limit (3/3 used).",
+          error: "Coupon code is not valid.",
         });
       }
 
@@ -31,19 +31,19 @@ export async function POST(req: NextRequest) {
         valid: true,
         code: "FIRST3",
         discountPercent: 100,
-        message: "🎉 Coupon FIRST3 Applied! 100% OFF (Free Slot)",
+        message: "Coupon FIRST3 applied (100% OFF)",
       });
     }
 
     if (cleanCode === "CLAUDE10") {
-      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10'`);
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10' AND slot_id LIKE 'pro-%'`);
       const used = Number(redemptions.rows[0]?.count || 0);
 
-      if (used >= 7) {
+      if (used >= 10) {
         return NextResponse.json({
           success: false,
           valid: false,
-          error: "Coupon CLAUDE10 has reached its maximum limit (7/7 used).",
+          error: "Coupon code is not valid.",
         });
       }
 
@@ -55,14 +55,14 @@ export async function POST(req: NextRequest) {
         discountPercent: 50,
         price15: 1,
         price30: 1,
-        message: "🎉 Coupon CLAUDE10 Applied! 15d for ₹1 / 30d for ₹1",
+        message: "Coupon CLAUDE10 applied (₹1 Deal)",
       });
     }
 
     return NextResponse.json({
       success: false,
       valid: false,
-      error: "Invalid coupon code.",
+      error: "Coupon code is not valid.",
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, valid: false, error: err.message }, { status: 500 });

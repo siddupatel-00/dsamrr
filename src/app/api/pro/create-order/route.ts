@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
 
     const cleanCoupon = (couponCode || "").trim().toUpperCase();
     if (cleanCoupon === "CLAUDE10") {
-      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10'`);
+      const redemptions = await client.execute(`SELECT COUNT(*) as count FROM coupon_redemptions WHERE code = 'CLAUDE10' AND slot_id LIKE 'pro-%'`);
       const used = Number(redemptions.rows[0]?.count || 0);
-      if (used < 7) {
+      if (used < 10) {
         amountPaise = 100; // 15d or 30d for ₹1
       }
     }

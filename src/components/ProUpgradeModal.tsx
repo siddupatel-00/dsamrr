@@ -99,10 +99,10 @@ export function ProUpgradeModal({
         setCouponError("");
       } else {
         setAppliedCoupon(null);
-        setCouponError(data.error || "Invalid coupon code.");
+        setCouponError(data.error || "Coupon code is not valid.");
       }
     } catch (err: any) {
-      setCouponError(err.message || "Failed to validate coupon.");
+      setCouponError("Coupon code is not valid.");
     } finally {
       setCouponLoading(false);
     }
@@ -347,7 +347,7 @@ export function ProUpgradeModal({
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="e.g. FIRST3"
+                    placeholder="Enter coupon code"
                     value={couponInput}
                     onChange={(e) => {
                       setCouponInput(e.target.value);
