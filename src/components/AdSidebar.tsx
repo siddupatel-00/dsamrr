@@ -29,8 +29,8 @@ export interface TrustMrrAd {
 export const INITIAL_LEFT_ADS: TrustMrrAd[] = [
   {
     id: "left-1",
-    name: "Claim Ad Spot #L1",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #L1",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#1c1228]",
     borderClass: "border-[#331c49]/80",
@@ -41,8 +41,8 @@ export const INITIAL_LEFT_ADS: TrustMrrAd[] = [
   },
   {
     id: "left-2",
-    name: "Claim Ad Spot #L2",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #L2",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#0c1b2c]",
     borderClass: "border-[#143152]/80",
@@ -53,8 +53,8 @@ export const INITIAL_LEFT_ADS: TrustMrrAd[] = [
   },
   {
     id: "left-3",
-    name: "Claim Ad Spot #L3",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #L3",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#231514]",
     borderClass: "border-[#3e211e]/80",
@@ -65,8 +65,8 @@ export const INITIAL_LEFT_ADS: TrustMrrAd[] = [
   },
   {
     id: "left-4",
-    name: "Claim Ad Spot #L4",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #L4",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#201021]",
     borderClass: "border-[#3a1b3b]/80",
@@ -77,8 +77,8 @@ export const INITIAL_LEFT_ADS: TrustMrrAd[] = [
   },
   {
     id: "left-5",
-    name: "Claim Ad Spot #L5",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #L5",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#0b1b26]",
     borderClass: "border-[#133045]/80",
@@ -92,8 +92,8 @@ export const INITIAL_LEFT_ADS: TrustMrrAd[] = [
 export const INITIAL_RIGHT_ADS: TrustMrrAd[] = [
   {
     id: "right-1",
-    name: "Claim Ad Spot #R1",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #R1",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#0c2217]",
     borderClass: "border-[#153e2a]/80",
@@ -104,8 +104,8 @@ export const INITIAL_RIGHT_ADS: TrustMrrAd[] = [
   },
   {
     id: "right-2",
-    name: "Claim Ad Spot #R2",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #R2",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#15171a]",
     borderClass: "border-[#282c33]/80",
@@ -116,8 +116,8 @@ export const INITIAL_RIGHT_ADS: TrustMrrAd[] = [
   },
   {
     id: "right-3",
-    name: "Claim Ad Spot #R3",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #R3",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#1f1220]",
     borderClass: "border-[#381e39]/80",
@@ -128,8 +128,8 @@ export const INITIAL_RIGHT_ADS: TrustMrrAd[] = [
   },
   {
     id: "right-4",
-    name: "Claim Ad Spot #R4",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #R4",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#0e1e24]",
     borderClass: "border-[#193540]/80",
@@ -140,8 +140,8 @@ export const INITIAL_RIGHT_ADS: TrustMrrAd[] = [
   },
   {
     id: "right-5",
-    name: "Claim Ad Spot #R5",
-    tagline: "Vacant slot available for immediate booking",
+    name: "Pro Spotlight #R5",
+    tagline: "Available for developer project showcase",
     url: "",
     bgClass: "bg-[#22131b]",
     borderClass: "border-[#3d2030]/80",
@@ -194,10 +194,10 @@ export function TrustMrrSidebar({
                 <Plus className="w-4 h-4" />
               </div>
               <div className="font-bold text-xs text-zinc-300 group-hover:text-white font-sans">
-                Claim Ad Spot #{position === "left" ? "L" : "R"}{idx + 1}
+                Pro Spotlight #{position === "left" ? "L" : "R"}{idx + 1}
               </div>
               <p className="text-[10px] text-zinc-500 font-sans mt-0.5">
-                Claim for 15d (₹1) or 30d (₹2)
+                Spotlight for 15d (₹1) or 30d (₹2)
               </p>
             </button>
           );
@@ -453,8 +453,8 @@ export function AdBookingModal({
           key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
           amount: order.amount,
           currency: "INR",
-          name: "DSAMRR Ad Placement",
-          description: `${duration} Days Advertisement (${slotId})`,
+          name: "DSAMRR Pro Membership",
+          description: `${duration} Days Pro Spotlight (${slotId})`,
           order_id: order.id,
           handler: async function (response: any) {
             // 3. Verify Razorpay Payment and Activate in Database
@@ -532,11 +532,11 @@ export function AdBookingModal({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-zinc-100 font-sans">
-                  {isPrebook ? "Pre-Book Ad Placement" : "Book Ad Placement"}
+                  {isPrebook ? "Reserve Pro Spotlight" : "Get Pro Spotlight Showcase"}
                 </h3>
                 {isPrebook && prebookStartDate && (
                   <p className="text-[10px] text-amber-400 font-mono">
-                    Starts {prebookStartDate} • Guaranteed Queue
+                    Starts {prebookStartDate} • Guaranteed Reservation
                   </p>
                 )}
               </div>
@@ -551,7 +551,7 @@ export function AdBookingModal({
 
           {isPrebook && (
             <div className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-300 text-[11px] font-mono leading-relaxed">
-              <strong>Pre-Booking Policy:</strong> Slot will be locked exclusively for you starting on {prebookStartDate}. No other advertiser can book this queue. Non-refundable.
+              <strong>Reservation Policy:</strong> Spotlight showcase slot will be locked exclusively for you starting on {prebookStartDate}. Non-refundable digital membership.
             </div>
           )}
 
@@ -561,19 +561,19 @@ export function AdBookingModal({
                 <Check className="w-5 h-5" />
               </div>
               <div className="font-bold text-white font-sans text-sm">
-                {isPrebook ? "Pre-Booking Confirmed & Slot Locked!" : "Payment Verified & Ad Live!"}
+                {isPrebook ? "Reservation Confirmed & Slot Locked!" : "Pro Spotlight Active!"}
               </div>
               <p className="text-xs text-zinc-400">
                 {isPrebook
-                  ? `Your advertisement is queued and guaranteed to go live on ${prebookStartDate} for ${duration} days.`
-                  : `Your advertisement is now live for the next ${duration} days.`}
+                  ? `Your project spotlight is reserved and scheduled to go live on ${prebookStartDate} for ${duration} days.`
+                  : `Your project spotlight is now live for the next ${duration} days.`}
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               {/* Duration Selector */}
               <div className="space-y-1">
-                <label className="text-zinc-400">Campaign Duration</label>
+                <label className="text-zinc-400">Spotlight Duration</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -772,13 +772,13 @@ export function AdBookingModal({
                 ) : getEffectivePrice(duration) === 0 ? (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Claim Ad Spot for Free (₹0)</span>
+                    <span>Activate Free Spotlight (₹0)</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 ) : (
                   <>
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Claim Your Ad for {duration} Days (₹{getEffectivePrice(duration)})</span>
+                    <span>Get Pro Spotlight for {duration} Days (₹{getEffectivePrice(duration)})</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

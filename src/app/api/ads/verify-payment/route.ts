@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       );
     }
     if (!STANDARD_AD_SLOTS.some((slot) => slot.id === normalizedSlotId)) {
-      return NextResponse.json({ success: false, error: "Invalid advertising slot." }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Invalid spotlight slot." }, { status: 400 });
     }
     let cleanUrl: string;
     try {

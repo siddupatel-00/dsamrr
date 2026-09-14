@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "This slot is currently occupied. Please choose Pre-Book." }, { status: 400 });
     }
     if (prebookedAd) {
-      return NextResponse.json({ success: false, error: "This slot is already pre-booked by another advertiser." }, { status: 400 });
+      return NextResponse.json({ success: false, error: "This slot is already reserved by another user." }, { status: 400 });
     }
 
     // Calculate dates

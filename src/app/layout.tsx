@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Terminal, Trophy, Megaphone } from "lucide-react";
+import { Terminal, Trophy, Zap } from "lucide-react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { UserNav } from "@/components/UserNav";
 import { VisitorCounter } from "@/components/VisitorCounter";
@@ -57,10 +57,10 @@ export default function RootLayout({
             <div className="flex items-center gap-3">
               <Link
                 href="/ads"
-                className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-zinc-100 transition px-3 py-1.5 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 text-xs font-mono text-amber-400/90 hover:text-amber-300 transition px-3 py-1.5 rounded-xl bg-amber-950/20 hover:bg-amber-900/30 border border-amber-800/50 cursor-pointer shadow-sm"
               >
-                <Megaphone className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-medium">Advertise</span>
+                <Zap className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-semibold">Pro Spotlight</span>
               </Link>
 
               {/* User Authentication & Profile Menu */}

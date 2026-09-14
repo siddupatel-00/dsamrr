@@ -8,7 +8,7 @@ import {
   Calendar,
   Lock,
   Plus,
-  Megaphone,
+  Sparkles,
   ArrowLeft,
   AlertCircle,
   X,
@@ -69,13 +69,9 @@ export default function AdsPage() {
   const handleSlotClick = (slot: SlotStatus) => {
     setErrorNotice(null);
 
-    if (!session?.user) {
-      router.push(`/auth?callbackUrl=/ads`);
-      return;
-    }
-
+    // Guest checkout enabled (no login barrier)
     if (slot.isPrebooked) {
-      setErrorNotice(`Sorry, ${slot.label} is already pre-booked by another advertiser. Please select another slot.`);
+      setErrorNotice(`Sorry, ${slot.label} is already reserved by another user. Please select another slot.`);
       return;
     }
 
@@ -119,12 +115,12 @@ export default function AdsPage() {
           {isAlreadyPrebooked && (
             <span className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-rose-950/90 border border-rose-800 text-rose-400 font-bold flex items-center gap-1.5 shadow-sm">
               <Lock className="w-3 h-3 text-rose-400" />
-              <span>Pre-Booked (Locked)</span>
+              <span>Reserved (Locked)</span>
             </span>
           )}
           {isPrebookable && (
             <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-amber-950/80 border border-amber-800 text-amber-400 font-bold">
-              🟡 Active (Pre-Bookable)
+              🟡 Active (Reservable)
             </span>
           )}
           {isCurrentlyVacant && (
@@ -134,11 +130,11 @@ export default function AdsPage() {
           )}
         </div>
 
-        {/* Active Advertisement Preview */}
+        {/* Active Spotlight Preview */}
         {slot.activeAd ? (
           <div className={`p-3.5 rounded-xl space-y-2 border ${isAlreadyPrebooked ? "bg-zinc-950/70 border-rose-950/80" : "bg-zinc-950/60 border-zinc-800/80"}`}>
             <div className="text-[10px] uppercase font-mono text-zinc-500 font-bold tracking-wider">
-              Current Running Advertisement:
+              Current Spotlight Project:
             </div>
             <div className="flex items-start gap-3">
               {slot.activeAd.imageUrl ? (
@@ -164,7 +160,7 @@ export default function AdsPage() {
           </div>
         ) : (
           <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-800/30 text-emerald-300 text-xs font-sans">
-            No active advertiser on this slot right now. Ready for instant activation!
+            No active showcase on this slot right now. Ready for instant activation!
           </div>
         )}
 
@@ -173,25 +169,25 @@ export default function AdsPage() {
           {isAlreadyPrebooked && (
             <>
               <div className="flex items-center justify-between text-zinc-400">
-                <span>Current ad ends on:</span>
+                <span>Current term ends on:</span>
                 <strong className="text-zinc-300">{slot.activeExpiresAt}</strong>
               </div>
               <div className="flex items-center justify-between text-rose-300 font-bold">
-                <span>Pre-booked until:</span>
+                <span>Reserved until:</span>
                 <strong className="text-rose-400">{slot.prebookedExpiresAt}</strong>
               </div>
             </>
           )}
           {isPrebookable && (
             <div className="flex items-center justify-between text-zinc-300">
-              <span className="text-zinc-400">Current ad ends on:</span>
+              <span className="text-zinc-400">Current term ends on:</span>
               <strong className="text-amber-400 font-bold">{slot.activeExpiresAt}</strong>
             </div>
           )}
           {isCurrentlyVacant && (
             <div className="flex items-center justify-between text-emerald-400">
-              <span>Goes Live:</span>
-              <strong>Instantly upon payment</strong>
+              <span>Activation:</span>
+              <strong>Instantly upon confirmation</strong>
             </div>
           )}
         </div>
@@ -211,19 +207,19 @@ export default function AdsPage() {
           {isAlreadyPrebooked && (
             <>
               <Lock className="w-3.5 h-3.5 text-rose-400" />
-              <span>Pre-Booked (Locked)</span>
+              <span>Reserved (Locked)</span>
             </>
           )}
           {isPrebookable && (
             <>
               <Calendar className="w-4 h-4" />
-              <span>Pre-Book Slot (Starts {slot.activeExpiresAt})</span>
+              <span>Reserve Spotlight (Starts {slot.activeExpiresAt})</span>
             </>
           )}
           {isCurrentlyVacant && (
             <>
               <Plus className="w-4 h-4" />
-              <span>Claim Slot Live Now (₹1 / ₹2)</span>
+              <span>Get Spotlight Live Now (₹1 / ₹2)</span>
             </>
           )}
         </button>
@@ -244,26 +240,26 @@ export default function AdsPage() {
             <span>Back to Leaderboard</span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-            <Megaphone className="w-7 h-7 text-emerald-400" />
-            <span>Book Advertisement Slots</span>
+            <Sparkles className="w-7 h-7 text-amber-400" />
+            <span>DSAMRR Pro Spotlight</span>
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Claim available vacant slots or pre-book upcoming queues in advance.
+            Spotlight your developer tool, open-source project, or portfolio to active coders.
           </p>
         </div>
 
         {/* Status Counter Badge */}
         <div className="flex items-center gap-2 font-mono text-xs shrink-0">
           <div className="px-3 py-1.5 rounded-xl bg-[#0e0f14] border border-[#1f2128] text-zinc-300">
-            Occupied: <strong className="text-amber-400">{occupiedCount}/10</strong>
+            Active: <strong className="text-amber-400">{occupiedCount}/10</strong>
           </div>
           <div className="px-3 py-1.5 rounded-xl bg-[#0e0f14] border border-[#1f2128] text-zinc-300">
-            Pre-booked: <strong className="text-rose-400">{prebookedCount}/10</strong>
+            Reserved: <strong className="text-rose-400">{prebookedCount}/10</strong>
           </div>
         </div>
       </div>
 
-      {/* Error / Already Pre-booked Toast Alert */}
+      {/* Error / Already Reserved Toast Alert */}
       {errorNotice && (
         <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-700 text-rose-200 text-xs flex items-center justify-between font-mono animate-in fade-in shadow-xl">
           <div className="flex items-center gap-2.5">
@@ -282,7 +278,7 @@ export default function AdsPage() {
       {/* Two Vertical Columns (L1-L5 Down, R1-R5 Down) */}
       {loading ? (
         <div className="py-16 text-center text-zinc-500 font-mono text-sm">
-          Loading ad slots schedule...
+          Loading spotlight schedule...
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -290,7 +286,7 @@ export default function AdsPage() {
           <div className="space-y-4">
             <div className="text-xs font-bold text-zinc-400 font-mono tracking-wider uppercase flex items-center gap-2 pb-1 border-b border-zinc-800/80">
               <span className="w-2 h-2 rounded-full bg-sky-400" />
-              <span>Left Sidebar Spots (L1 – L5)</span>
+              <span>Left Spotlight Showcase (L1 – L5)</span>
             </div>
             <div className="space-y-4">
               {leftSlots.map((slot) => renderSlotCard(slot))}
@@ -301,7 +297,7 @@ export default function AdsPage() {
           <div className="space-y-4">
             <div className="text-xs font-bold text-zinc-400 font-mono tracking-wider uppercase flex items-center gap-2 pb-1 border-b border-zinc-800/80">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Right Sidebar Spots (R1 – R5)</span>
+              <span>Right Spotlight Showcase (R1 – R5)</span>
             </div>
             <div className="space-y-4">
               {rightSlots.map((slot) => renderSlotCard(slot))}

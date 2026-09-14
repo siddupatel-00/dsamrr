@@ -144,21 +144,21 @@ export async function sendAdLiveConfirmationEmail(params: {
   const html = `
     <div style="background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; border-radius: 16px; border: 1px solid #27272a;">
       <div style="margin-bottom: 20px;">
-        <span style="background: #022c22; color: #34d399; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #065f46; text-transform: uppercase;">Payment Confirmed & Live</span>
+        <span style="background: #022c22; color: #34d399; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #065f46; text-transform: uppercase;">Membership Confirmed & Active</span>
       </div>
-      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Your advertisement is now LIVE on DSAMRR! 🎉</h2>
+      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Your DSAMRR Pro Spotlight is LIVE! 🎉</h2>
       <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6; margin-bottom: 24px;">
-        Thank you for advertising with DSAMRR. Your campaign is active and receiving prime visibility on the leaderboard sidebar.
+        Thank you for supporting DSAMRR. Your project spotlight is active and receiving prime visibility across the developer leaderboard.
       </p>
       <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
           <tr>
-            <td style="color: #a1a1aa; padding: 6px 0;">Campaign Name:</td>
+            <td style="color: #a1a1aa; padding: 6px 0;">Project Name:</td>
             <td style="color: #ffffff; font-weight: 600; text-align: right;">${adName}</td>
           </tr>
           <tr>
-            <td style="color: #a1a1aa; padding: 6px 0;">Spot Location:</td>
-            <td style="color: #34d399; font-weight: 700; text-align: right;">Spot #${spotName.toUpperCase()}</td>
+            <td style="color: #a1a1aa; padding: 6px 0;">Spotlight Location:</td>
+            <td style="color: #34d399; font-weight: 700; text-align: right;">Spotlight #${spotName.toUpperCase()}</td>
           </tr>
           <tr>
             <td style="color: #a1a1aa; padding: 6px 0;">Duration:</td>
@@ -179,14 +179,14 @@ export async function sendAdLiveConfirmationEmail(params: {
         </table>
       </div>
       <p style="font-size: 13px; color: #71717a; line-height: 1.5;">
-        You will receive a complete performance analytics wrap-up on the final day of your campaign.
+        You will receive a complete engagement report on the final day of your spotlight showcase.
       </p>
     </div>
   `;
 
   return dispatchEmail({
     toEmail,
-    subject: `Ad Receipt & Live Confirmation: Spot #${spotName.toUpperCase()} (₹${amountRupees})`,
+    subject: `DSAMRR Pro Confirmation: Spotlight #${spotName.toUpperCase()} (₹${amountRupees})`,
     html,
   });
 }
@@ -218,21 +218,21 @@ export async function sendAdPrebookConfirmationEmail(params: {
   const html = `
     <div style="background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; border-radius: 16px; border: 1px solid #27272a;">
       <div style="margin-bottom: 20px;">
-        <span style="background: #172554; color: #60a5fa; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #1e40af; text-transform: uppercase;">Pre-Book Spot Reserved</span>
+        <span style="background: #172554; color: #60a5fa; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #1e40af; text-transform: uppercase;">Spotlight Reserved</span>
       </div>
-      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Your spot is reserved on DSAMRR! 🔒</h2>
+      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Your spotlight is reserved on DSAMRR! 🔒</h2>
       <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6; margin-bottom: 24px;">
-        Your payment has been verified and your upcoming ad slot is guaranteed in our queue.
+        Your payment has been verified and your upcoming spotlight slot is guaranteed in our schedule.
       </p>
       <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
         <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
           <tr>
-            <td style="color: #a1a1aa; padding: 6px 0;">Campaign Name:</td>
+            <td style="color: #a1a1aa; padding: 6px 0;">Project Name:</td>
             <td style="color: #ffffff; font-weight: 600; text-align: right;">${adName}</td>
           </tr>
           <tr>
-            <td style="color: #a1a1aa; padding: 6px 0;">Reserved Spot:</td>
-            <td style="color: #60a5fa; font-weight: 700; text-align: right;">Spot #${spotName.toUpperCase()}</td>
+            <td style="color: #a1a1aa; padding: 6px 0;">Reserved Spotlight:</td>
+            <td style="color: #60a5fa; font-weight: 700; text-align: right;">Spotlight #${spotName.toUpperCase()}</td>
           </tr>
           <tr>
             <td style="color: #a1a1aa; padding: 6px 0;">Scheduled Go-Live Date:</td>
@@ -253,19 +253,19 @@ export async function sendAdPrebookConfirmationEmail(params: {
         </table>
       </div>
       <p style="font-size: 13px; color: #71717a; line-height: 1.5;">
-        We will automatically send you an email alert the morning your advertisement goes live!
+        We will automatically send you an email alert the morning your project spotlight goes live!
       </p>
     </div>
   `;
 
   return dispatchEmail({
     toEmail,
-    subject: `Pre-Book Confirmed: Spot #${spotName.toUpperCase()} Go-Live on ${startDate}`,
+    subject: `Spotlight Reserved: #${spotName.toUpperCase()} Go-Live on ${startDate}`,
     html,
   });
 }
 
-// 4. Pre-Book Go-Live Reminder (Morning ad goes live)
+// 4. Pre-Book Go-Live Reminder (Morning spotlight goes live)
 export async function sendAdStartedReminderEmail(params: {
   toEmail: string;
   adName: string;
@@ -281,25 +281,25 @@ export async function sendAdStartedReminderEmail(params: {
   const html = `
     <div style="background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; border-radius: 16px; border: 1px solid #27272a;">
       <div style="margin-bottom: 20px;">
-        <span style="background: #022c22; color: #34d399; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #065f46; text-transform: uppercase;">Ad Officially Live</span>
+        <span style="background: #022c22; color: #34d399; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #065f46; text-transform: uppercase;">Spotlight Officially Live</span>
       </div>
-      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Good morning! Your pre-booked ad is now LIVE 🚀</h2>
+      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Good morning! Your spotlight is now LIVE 🚀</h2>
       <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6; margin-bottom: 20px;">
-        Your pre-booked campaign <strong>${adName}</strong> has officially taken its spot on <strong>Spot #${spotName.toUpperCase()}</strong>.
+        Your project spotlight <strong>${adName}</strong> has officially taken its spot on <strong>Spotlight #${spotName.toUpperCase()}</strong>.
       </p>
       <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 18px; margin-bottom: 24px; font-size: 13px;">
         <div style="color: #ffffff; margin-bottom: 8px;"><strong>Status:</strong> Active & Visible</div>
         <div style="color: #a1a1aa;"><strong>Expires on:</strong> ${expiresAt}</div>
       </div>
       <p style="font-size: 13px; color: #71717a;">
-        Track live traffic on the DSAMRR leaderboard.
+        Track live engagement on the DSAMRR leaderboard.
       </p>
     </div>
   `;
 
   return dispatchEmail({
     toEmail,
-    subject: `Your Ad Campaign "${adName}" is Now LIVE on DSAMRR!`,
+    subject: `Your Project Spotlight "${adName}" is Now LIVE on DSAMRR!`,
     html,
   });
 }
@@ -329,11 +329,11 @@ export async function sendAdCompletionAnalyticsEmail(params: {
   const html = `
     <div style="background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 32px 24px; border-radius: 16px; border: 1px solid #27272a;">
       <div style="margin-bottom: 20px;">
-        <span style="background: #3b0764; color: #c084fc; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #581c87; text-transform: uppercase;">Final Campaign Analytics</span>
+        <span style="background: #3b0764; color: #c084fc; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: 1px solid #581c87; text-transform: uppercase;">Final Spotlight Report</span>
       </div>
-      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Campaign Performance Report 📊</h2>
+      <h2 style="font-size: 22px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">Spotlight Performance Report 📊</h2>
       <p style="font-size: 14px; color: #a1a1aa; line-height: 1.6; margin-bottom: 24px;">
-        Your campaign <strong>${adName}</strong> on <strong>Spot #${spotName.toUpperCase()}</strong> has concluded. Here are your verified engagement metrics:
+        Your spotlight <strong>${adName}</strong> on <strong>Spotlight #${spotName.toUpperCase()}</strong> has concluded. Here are your verified engagement metrics:
       </p>
       <div style="display: flex; gap: 12px; margin-bottom: 24px;">
         <div style="flex: 1; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; text-align: center;">
@@ -350,7 +350,7 @@ export async function sendAdCompletionAnalyticsEmail(params: {
         </div>
       </div>
       <p style="font-size: 13px; color: #71717a;">
-        Thank you for advertising with DSAMRR! You can re-book or reserve any upcoming open slot anytime.
+        Thank you for supporting DSAMRR! You can reserve any upcoming open slot anytime.
       </p>
     </div>
   `;
