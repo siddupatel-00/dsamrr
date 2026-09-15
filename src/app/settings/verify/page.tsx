@@ -2,7 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ShieldCheck,
   Copy,
@@ -31,9 +32,18 @@ const PLATFORMS: { id: PlatformType; label: string; short: string; url: string; 
 ];
 
 function VerifySettingsContent() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const searchParams = useSearchParams();
   const paramUsername = searchParams ? searchParams.get("username") || "siddu" : "siddu";
   const paramPlatform = searchParams ? (searchParams.get("platform") as PlatformType) || "leetcode" : "leetcode";
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth?callbackUrl=/settings/verify");
+    }
+  }, [status, router]);
 
   const [activeTab, setActiveTab] = useState<"platforms" | "socials" | "visibility">("platforms");
 

@@ -4,6 +4,9 @@ import { initDb } from "@/db/init";
 import { users, platformAccounts, dailySnapshots, streaks } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -12,6 +15,14 @@ export async function GET(
 ) {
   try {
     await initDb();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required to view developer profiles." },
+        { status: 401 }
+      );
+    }
+
     const { username } = params;
 
     const [user] = await db.select().from(users).where(eq(users.username, username));

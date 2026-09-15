@@ -61,6 +61,12 @@ function AccountSettingsContent() {
     fetchLatestSettings();
   }, [session]);
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth?callbackUrl=/settings/account");
+    }
+  }, [status, router]);
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
