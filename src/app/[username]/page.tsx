@@ -428,13 +428,6 @@ export default async function UserProfilePage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* GitHub Developer Showcase Card */}
-      <GitHubProCard
-        githubHandle={user.githubHandle}
-        githubStats={user.githubStats}
-        isOwner={isOwner}
-        profileUsername={user.username}
-      />
 
       {/* Verified DSA Platforms Grid */}
       <div className="space-y-3 pt-2">
@@ -586,6 +579,14 @@ export default async function UserProfilePage({ params }: PageProps) {
           })}
         </div>
       </div>
+
+      {/* GitHub Developer Showcase Card */}
+      <GitHubProCard
+        githubHandle={user.githubHandle}
+        githubStats={user.githubStats}
+        isOwner={isOwner}
+        profileUsername={user.username}
+      />
     </div>
   );
 }

@@ -587,8 +587,8 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* TrustMRR-style Revenue Counter Banner */}
-        <RevenueBanner />
+        {/* TrustMRR-style Revenue Counter Banner (Hidden for now) */}
+        {/* <RevenueBanner /> */}
       </div>
     </div>
   );
