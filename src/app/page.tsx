@@ -97,9 +97,12 @@ export default function LeaderboardPage() {
   const platformDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleUserClick = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
     if (!session?.user) {
       e.preventDefault();
       router.push(`/auth?callbackUrl=/${username}`);
+    } else {
+      router.push(`/${username}`);
     }
   };
 
@@ -466,6 +469,7 @@ export default function LeaderboardPage() {
                           ) : (
                             <Link
                               href={`/${entry.username}`}
+                              prefetch={true}
                               onClick={(e) => handleUserClick(e, entry.username)}
                               className="flex items-center gap-2.5 font-sans"
                             >

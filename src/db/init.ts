@@ -9,6 +9,20 @@ export async function initDb(): Promise<void> {
 
   initPromise = (async () => {
     try {
+      // 1. Fast probe: If tables exist, return in ~15ms instead of running 25 DDL statements
+      const probe = await client.execute({
+        sql: "SELECT 1 FROM users LIMIT 1",
+        args: [],
+      });
+      if (probe) {
+        isInitialized = true;
+        return;
+      }
+    } catch {
+      // Tables don't exist yet, proceed with full migration batch
+    }
+
+    try {
       // Execute fast batch schema migrations in a single round-trip
       await client.batch([
         `PRAGMA foreign_keys = ON;`,
@@ -138,6 +152,10 @@ export async function initDb(): Promise<void> {
         `CREATE INDEX IF NOT EXISTS idx_daily_snapshots_date ON daily_snapshots(date);`,
         `CREATE INDEX IF NOT EXISTS idx_streaks_user ON streaks(user_id);`,
         `CREATE INDEX IF NOT EXISTS idx_ads_expires ON ads(expires_at);`,
+        `CREATE INDEX IF NOT EXISTS idx_platform_accounts_verified ON platform_accounts(verified_status, user_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_daily_snapshots_platform_acc ON daily_snapshots(platform_account_id);`,
+        `CREATE INDEX IF NOT EXISTS idx_daily_snapshots_platform_date ON daily_snapshots(platform, date);`,
+        `CREATE INDEX IF NOT EXISTS idx_users_is_anon ON users(is_anonymous);`,
       ]);
 
       // Safe column additions for Pro Developer Membership

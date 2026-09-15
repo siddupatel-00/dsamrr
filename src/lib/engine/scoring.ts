@@ -138,11 +138,44 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
     return cachedLeaderboard.data;
   }
 
-  // Blazing fast parallel execution of all 4 queries
+  // Blazing fast parallel execution of all 4 queries with column projection
   const [allUsers, allAccounts, allSnapshots, allStreaks] = await Promise.all([
-    db.select().from(users),
-    db.select().from(platformAccounts),
-    db.select().from(dailySnapshots),
+    db
+      .select({
+        id: users.id,
+        username: users.username,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        isAnonymous: users.isAnonymous,
+        isPro: users.isPro,
+        githubHandle: users.githubHandle,
+        showGithub: users.showGithub,
+      })
+      .from(users),
+    db
+      .select({
+        id: platformAccounts.id,
+        userId: platformAccounts.userId,
+        platform: platformAccounts.platform,
+        username: platformAccounts.username,
+        verifiedStatus: platformAccounts.verifiedStatus,
+        isVisible: platformAccounts.isVisible,
+      })
+      .from(platformAccounts),
+    db
+      .select({
+        id: dailySnapshots.id,
+        userId: dailySnapshots.userId,
+        platformAccountId: dailySnapshots.platformAccountId,
+        platform: dailySnapshots.platform,
+        problemsSolvedEasy: dailySnapshots.problemsSolvedEasy,
+        problemsSolvedMedium: dailySnapshots.problemsSolvedMedium,
+        problemsSolvedHard: dailySnapshots.problemsSolvedHard,
+        totalSolved: dailySnapshots.totalSolved,
+        score: dailySnapshots.score,
+        date: dailySnapshots.date,
+      })
+      .from(dailySnapshots),
     db.select().from(streaks),
   ]);
 
@@ -300,7 +333,7 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
   cachedLeaderboard = {
     data: result,
     date: currentDateUtc,
-    expiresAt: Date.now() + 3000,
+    expiresAt: Date.now() + 30_000,
   };
 
   return result;
