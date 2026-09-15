@@ -91,30 +91,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. Optional Monthly Ranking Notification (Top Leaderboard Programmers)
+    // 3. Monthly Ranking Emails - DISABLED to prevent sending bulk emails from personal Gmail
+    // Leaderboard rankings are tracked directly on the website instead.
+    /*
     const isFirstDayOfMonth = today.endsWith("-01");
     if (isFirstDayOfMonth || req.nextUrl.searchParams.get("send_rankings") === "true") {
-      const leaderboard = await getLeaderboard();
-      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      const prevMonthName = monthNames[(new Date().getMonth() + 11) % 12];
-
-      for (let i = 0; i < (leaderboard.allTime || []).slice(0, 20).length; i++) {
-        const entry = leaderboard.allTime[i];
-        if (entry.userId && !entry.isAnonymous) {
-          const [u] = await db.select().from(users).where(eq(users.id, entry.userId));
-          if (u?.email) {
-            await sendMonthlyRankAnalyticsEmail({
-              toEmail: u.email,
-              username: u.username,
-              rank: i + 1,
-              totalSolved: entry.allTimeTotal || 0,
-              monthName: prevMonthName,
-            });
-            results.monthlyRankingsNotified++;
-          }
-        }
-      }
+      // Disabled
     }
+    */
 
     return NextResponse.json({
       success: true,
