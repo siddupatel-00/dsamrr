@@ -80,7 +80,7 @@ function AccountSettingsContent() {
         body: JSON.stringify({
           username: username.trim(),
           email: email.trim(),
-          name: name.trim(),
+          name: username.trim(),
           isAnonymous,
         }),
       });
@@ -236,34 +236,6 @@ function AccountSettingsContent() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#15171c] border border-[#262933] text-zinc-100 focus:outline-none focus:border-emerald-500/80 transition"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-zinc-300 font-medium flex items-center gap-1.5 font-sans">
-                <span>Display Name</span>
-              </label>
-              <label className="flex items-center gap-1.5 text-[11px] font-sans text-zinc-400 hover:text-zinc-200 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={name === username}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setName(username);
-                    }
-                  }}
-                  className="rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-0 cursor-pointer"
-                />
-                <span>Same as username</span>
-              </label>
-            </div>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Alex Morgan"
               className="w-full px-3.5 py-2.5 rounded-xl bg-[#15171c] border border-[#262933] text-zinc-100 focus:outline-none focus:border-emerald-500/80 transition"
             />
           </div>

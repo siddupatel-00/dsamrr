@@ -85,7 +85,7 @@ export async function PATCH(req: NextRequest) {
 
     const cleanUsername = username !== undefined ? username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") : currentUser.username;
     const cleanEmail = email !== undefined ? email.trim().toLowerCase() : currentUser.email;
-    const cleanName = name !== undefined ? name.trim() : (currentUser.name || currentUser.username);
+    const cleanName = cleanUsername;
     const cleanAnonymous = isAnonymous !== undefined ? (isAnonymous ? 1 : 0) : currentUser.isAnonymous;
 
     if (!cleanUsername || !cleanEmail) {

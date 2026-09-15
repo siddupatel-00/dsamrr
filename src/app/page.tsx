@@ -493,11 +493,6 @@ export default function LeaderboardPage() {
                                     </span>
                                   )}
                                 </div>
-                                {entry.name && (
-                                  <div className="text-[10px] text-zinc-500 line-clamp-1 font-sans">
-                                    {entry.name}
-                                  </div>
-                                )}
                               </div>
                             </Link>
                           )}
