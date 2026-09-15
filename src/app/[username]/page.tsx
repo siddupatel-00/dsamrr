@@ -580,13 +580,13 @@ export default async function UserProfilePage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* GitHub Developer Showcase Card */}
-      <GitHubProCard
+      {/* GitHub Developer Showcase Card (Hidden for now) */}
+      {/* <GitHubProCard
         githubHandle={user.githubHandle}
         githubStats={user.githubStats}
         isOwner={isOwner}
         profileUsername={user.username}
-      />
+      /> */}
     </div>
   );
 }
