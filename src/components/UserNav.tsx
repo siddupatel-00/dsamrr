@@ -28,10 +28,10 @@ export function UserNav() {
     return (
       <Link
         href="/auth"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-sans font-bold transition cursor-pointer shadow-sm"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-sans font-bold transition cursor-pointer shadow-sm"
       >
         <UserIcon className="w-3.5 h-3.5" />
-        <span>Sign In</span>
+        <span>Sign Up</span>
       </Link>
     );
   }

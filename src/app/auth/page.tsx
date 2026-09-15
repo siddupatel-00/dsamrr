@@ -19,12 +19,13 @@ function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get("callbackUrl") || "/";
+  const defaultMode = searchParams?.get("mode");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(defaultMode !== "signin");
   const [step, setStep] = useState<"email" | "otp_and_password">("email");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
