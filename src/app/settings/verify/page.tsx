@@ -241,10 +241,12 @@ function VerifySettingsContent() {
   };
 
   const handleBack = () => {
-    if (username) {
-      window.location.href = `/${username}`;
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else if (username) {
+      router.push(`/${username}`);
     } else {
-      window.history.back();
+      router.push("/");
     }
   };
 
