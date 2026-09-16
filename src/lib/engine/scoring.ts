@@ -1,6 +1,7 @@
 import { db } from "../../db";
 import { users, platformAccounts, dailySnapshots, streaks, User, DailySnapshot, Streak } from "../../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { parseSubmissionCalendar } from "../platforms/leetcode";
 
 export interface PlatformStatItem {
   todayEasy: number;
@@ -174,6 +175,7 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
         totalSolved: dailySnapshots.totalSolved,
         score: dailySnapshots.score,
         date: dailySnapshots.date,
+        rawData: dailySnapshots.rawData,
       })
       .from(dailySnapshots),
     db.select().from(streaks),
@@ -249,13 +251,33 @@ export async function getLeaderboard(currentDateUtc: string = getUtcDateString()
           pTodayHard = Math.max(0, todaySnap.problemsSolvedHard - baselineSnap.problemsSolvedHard);
           pTodayTotal = Math.max(0, todaySnap.totalSolved - baselineSnap.totalSolved);
           pTodayScore = pTodayEasy * 1 + pTodayMedium * 3 + pTodayHard * 5;
-
-          todayEasy += pTodayEasy;
-          todayMedium += pTodayMedium;
-          todayHard += pTodayHard;
-          todayTotal += pTodayTotal;
-          todayScore += pTodayScore;
         }
+
+        // Fallback: if baselineSnap is not found or pTodayTotal is 0, check todaySnap.rawData for submissionCalendar
+        if (pTodayTotal === 0 && todaySnap.rawData) {
+          try {
+            const rawObj = typeof todaySnap.rawData === "string" ? JSON.parse(todaySnap.rawData) : todaySnap.rawData;
+            const cal = rawObj?.activityByDate || parseSubmissionCalendar(rawObj?.submissionCalendarRaw || rawObj?.submissionCalendar);
+            if (cal && cal[currentDateUtc] > 0) {
+              pTodayTotal = Number(cal[currentDateUtc]);
+              const avgScore = todaySnap.totalSolved > 0
+                ? Math.max(1, Math.round(todaySnap.score / todaySnap.totalSolved))
+                : 2;
+              pTodayScore = pTodayEasy * 1 + pTodayMedium * 3 + pTodayHard * 5;
+              if (pTodayScore === 0) {
+                pTodayScore = pTodayTotal * avgScore;
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing submissionCalendar in scoring fallback:", e);
+          }
+        }
+
+        todayEasy += pTodayEasy;
+        todayMedium += pTodayMedium;
+        todayHard += pTodayHard;
+        todayTotal += pTodayTotal;
+        todayScore += pTodayScore;
       }
 
       platformBreakdown[pa.platform] = {

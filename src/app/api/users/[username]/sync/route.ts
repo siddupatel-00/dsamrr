@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { initDb } from "@/db/init";
-import { users, platformAccounts, dailySnapshots } from "@/db/schema";
-import { fetchLeetCodeStats } from "@/lib/platforms/leetcode";
+import { users, platformAccounts, dailySnapshots, streaks } from "@/db/schema";
+import { fetchLeetCodeStats, parseSubmissionCalendar } from "@/lib/platforms/leetcode";
 import { fetchCodeforcesStats } from "@/lib/platforms/codeforces";
 import {
   fetchGeeksForGeeksStats,
@@ -10,12 +10,20 @@ import {
   fetchCodeChefStats,
   fetchAtCoderStats,
 } from "@/lib/platforms/multiPlatforms";
-import { getUtcDateString } from "@/lib/engine/scoring";
+import {
+  getUtcDateString,
+  getPreviousUtcDateString,
+  calculateNextStreak,
+  invalidateLeaderboardCache,
+} from "@/lib/engine/scoring";
 import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 import { getCurrentUser } from "@/lib/requestAuth";
 
 export const dynamic = "force-dynamic";
+
+const lastSyncByUser = new Map<string, number>();
+const SYNC_DEBOUNCE_MS = 15_000;
 
 export async function POST(
   req: NextRequest,
@@ -27,8 +35,25 @@ export async function POST(
     const today = getUtcDateString();
 
     const currentUser = await getCurrentUser();
-    if (!currentUser) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    if (currentUser.username !== username) return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    const isOwner = Boolean(currentUser && currentUser.username === username);
+
+    const now = Date.now();
+    const lastSyncTime = lastSyncByUser.get(username) || 0;
+
+    // Rate-limiting / debounce check: owners can sync frequently, others rate-limited to 15s
+    if (!isOwner) {
+      if (now - lastSyncTime < SYNC_DEBOUNCE_MS) {
+        const waitSec = Math.ceil((SYNC_DEBOUNCE_MS - (now - lastSyncTime)) / 1000);
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Rate limit: Please wait ${waitSec}s before syncing @${username} again.`,
+          },
+          { status: 429 }
+        );
+      }
+    }
+    lastSyncByUser.set(username, now);
 
     const [user] = await db.select().from(users).where(eq(users.username, username));
     if (!user) {
@@ -39,6 +64,8 @@ export async function POST(
       .select()
       .from(platformAccounts)
       .where(and(eq(platformAccounts.userId, user.id), eq(platformAccounts.verifiedStatus, "verified")));
+
+    let userHadActivityToday = false;
 
     for (const acc of accounts) {
       try {
@@ -71,6 +98,15 @@ export async function POST(
           rawData = res;
         }
 
+        // Determine today's solves from platform calendar if available
+        let todayDelta = 0;
+        if (acc.platform === "leetcode" && rawData) {
+          const cal = rawData.activityByDate || parseSubmissionCalendar(rawData.submissionCalendarRaw || rawData.submissionCalendar);
+          if (cal && cal[today]) {
+            todayDelta = Number(cal[today]) || 0;
+          }
+        }
+
         // Check prior snapshots to avoid overwriting with 0 on scrape failure
         const userSnaps = await db
           .select()
@@ -86,6 +122,28 @@ export async function POST(
         if (stats.total === 0 && hadPositive) {
           console.warn(`[Sync] Platform ${acc.platform} for ${acc.username} returned 0 solved, but previous snapshot had >0. Skipping 0 snapshot.`);
           continue;
+        }
+
+        // Check if there is any snapshot before today
+        const priorSnaps = userSnaps.filter((s) => s.date < today);
+        if (priorSnaps.length === 0) {
+          // If there is NO snapshot before today, create a baseline snapshot for getPreviousUtcDateString(today)
+          const prevDay = getPreviousUtcDateString(today);
+          const baselineTotal = Math.max(0, stats.total - todayDelta);
+          const baselineScore = Math.max(0, stats.score - (todayDelta * 2));
+          await db.insert(dailySnapshots).values({
+            id: `snap_${crypto.randomUUID()}`,
+            userId: user.id,
+            platformAccountId: acc.id,
+            platform: acc.platform as any,
+            problemsSolvedEasy: Math.max(0, stats.easy - (todayDelta > 0 ? 1 : 0)),
+            problemsSolvedMedium: stats.medium,
+            problemsSolvedHard: stats.hard,
+            totalSolved: baselineTotal,
+            score: baselineScore,
+            date: prevDay,
+            rawData: JSON.stringify({ note: "Baseline generated on first sync" }),
+          });
         }
 
         // Check today's existing snapshot
@@ -118,10 +176,52 @@ export async function POST(
             rawData: JSON.stringify(rawData),
           });
         }
+
+        // Determine if user had activity today
+        const baselineSnap = priorSnaps.sort((a, b) => b.date.localeCompare(a.date))[0];
+        const deltaFromBaseline = baselineSnap ? Math.max(0, stats.total - baselineSnap.totalSolved) : todayDelta;
+        if (deltaFromBaseline > 0 || todayDelta > 0) {
+          userHadActivityToday = true;
+        }
       } catch (err) {
         console.error(`Sync error for ${acc.platform}:${acc.username}`, err);
       }
     }
+
+    // Update user's streak in streaks table
+    const [existingStreak] = await db
+      .select()
+      .from(streaks)
+      .where(eq(streaks.userId, user.id));
+
+    const updatedStreak = calculateNextStreak(
+      existingStreak,
+      today,
+      userHadActivityToday
+    );
+
+    if (existingStreak) {
+      await db
+        .update(streaks)
+        .set({
+          currentStreak: updatedStreak.currentStreak,
+          longestStreak: updatedStreak.longestStreak,
+          lastActiveDate: updatedStreak.lastActiveDate,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(streaks.id, existingStreak.id));
+    } else {
+      await db.insert(streaks).values({
+        id: `streak_${crypto.randomUUID()}`,
+        userId: user.id,
+        currentStreak: updatedStreak.currentStreak,
+        longestStreak: updatedStreak.longestStreak,
+        lastActiveDate: updatedStreak.lastActiveDate,
+      });
+    }
+
+    // Invalidate leaderboard cache so next fetch gets real-time data
+    invalidateLeaderboardCache();
 
     return NextResponse.json({
       success: true,

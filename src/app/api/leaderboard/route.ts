@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLeaderboard, getUtcDateString } from "@/lib/engine/scoring";
+import { getLeaderboard, getUtcDateString, invalidateLeaderboardCache } from "@/lib/engine/scoring";
 import { executeDailySnapshot } from "@/lib/engine/cron";
 import { initDb } from "@/db/init";
 
@@ -11,6 +11,11 @@ const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 export async function GET(req: NextRequest) {
   try {
     await initDb();
+    const isRefresh = req.nextUrl.searchParams.get("refresh") === "true";
+    if (isRefresh) {
+      invalidateLeaderboardCache();
+    }
+
     const date = req.nextUrl.searchParams.get("date") || getUtcDateString();
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -37,7 +42,9 @@ export async function GET(req: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "public, max-age=15, s-maxage=30, stale-while-revalidate=120",
+          "Cache-Control": isRefresh
+            ? "no-cache, no-store, must-revalidate"
+            : "public, max-age=15, s-maxage=30, stale-while-revalidate=120",
         },
       }
     );

@@ -18,6 +18,8 @@ import { users, platformAccounts, dailySnapshots, streaks } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { ProfileSocialsCard } from "@/components/ProfileSocialsCard";
 import { GitHubProCard } from "@/components/GitHubProCard";
+import { SyncStatsButton } from "@/components/SyncStatsButton";
+import { parseSubmissionCalendar } from "@/lib/platforms/leetcode";
 
 import { notFound } from "next/navigation";
 
@@ -211,9 +213,22 @@ export default async function UserProfilePage({ params }: PageProps) {
         .filter((s) => s.date < targetDateStr)
         .sort((a, b) => b.date.localeCompare(a.date))[0];
 
+      let snapDelta = 0;
       if (prevSnap) {
-        delta += Math.max(0, targetSnap.totalSolved - prevSnap.totalSolved);
+        snapDelta = Math.max(0, targetSnap.totalSolved - prevSnap.totalSolved);
       }
+      if (snapDelta === 0 && targetSnap.rawData) {
+        try {
+          const rawObj = typeof targetSnap.rawData === "string" ? JSON.parse(targetSnap.rawData) : targetSnap.rawData;
+          const cal = rawObj?.activityByDate || parseSubmissionCalendar(rawObj?.submissionCalendarRaw || rawObj?.submissionCalendar);
+          if (cal && cal[targetDateStr] > 0) {
+            snapDelta = Number(cal[targetDateStr]);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      delta += snapDelta;
     });
     return delta;
   };
@@ -350,8 +365,9 @@ export default async function UserProfilePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Action button - ONLY visible if owner */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Action buttons */}
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <SyncStatsButton username={user.username} isOwner={isOwner} />
           {isOwner ? (
             <Link
               href={`/settings/verify?username=${user.username}`}

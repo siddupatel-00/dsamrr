@@ -13,8 +13,10 @@ import {
   ChevronDown,
   Filter,
   Check,
+  RotateCw,
 } from "lucide-react";
 import { RevenueBanner } from "@/components/RevenueBanner";
+import { SyncStatsButton } from "@/components/SyncStatsButton";
 
 type TimeframeType = "today" | "7days" | "thisMonth" | "lastMonth" | "allTime" | "streak";
 
@@ -84,6 +86,7 @@ export default function LeaderboardPage() {
   const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<{
     todaysGrind: UserLeaderboardEntry[];
     allTime: UserLeaderboardEntry[];
@@ -106,6 +109,31 @@ export default function LeaderboardPage() {
     }
   };
 
+  const fetchLeaderboard = async (isRefresh: boolean = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    try {
+      const url = isRefresh
+        ? `/api/leaderboard?refresh=true&t=${Date.now()}`
+        : `/api/leaderboard`;
+      const res = await fetch(url, {
+        cache: isRefresh ? "no-store" : "default",
+      });
+      const json = await res.json();
+      if (json.success && json.leaderboard) {
+        setLeaderboardData(json.leaderboard);
+      }
+    } catch (err) {
+      console.error("Failed to load leaderboard:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchLeaderboard();
 
@@ -116,25 +144,16 @@ export default function LeaderboardPage() {
     };
     document.addEventListener("mousedown", handleClickOutside);
 
+    const handleSyncEvent = () => {
+      fetchLeaderboard(true);
+    };
+    window.addEventListener("dsamrr:synced", handleSyncEvent);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("dsamrr:synced", handleSyncEvent);
     };
   }, []);
-
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/leaderboard");
-      const json = await res.json();
-      if (json.success && json.leaderboard) {
-        setLeaderboardData(json.leaderboard);
-      }
-    } catch (err) {
-      console.error("Failed to load leaderboard:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const togglePlatform = (id: string) => {
     setSelectedPlatforms((prev) =>
@@ -355,6 +374,28 @@ export default function LeaderboardPage() {
                   className="pl-8 pr-3 py-1.5 rounded-lg bg-[#15171c] border border-[#262933] text-zinc-200 text-xs font-sans w-28 sm:w-36 focus:outline-none focus:border-zinc-600 transition"
                 />
               </div>
+
+              {/* Refresh Leaderboard Button */}
+              <button
+                type="button"
+                onClick={() => fetchLeaderboard(true)}
+                disabled={refreshing || loading}
+                title="Refresh leaderboard"
+                className="flex items-center gap-1.5 bg-[#15171c] hover:bg-[#1a1d24] border border-[#262933] hover:border-zinc-500 text-zinc-300 text-xs font-sans font-medium px-2.5 py-1.5 rounded-lg focus:outline-none transition cursor-pointer disabled:opacity-50"
+              >
+                <RotateCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-emerald-400" : "text-zinc-400"}`} />
+                <span className="hidden sm:inline">{refreshing ? "Refreshing..." : "Refresh"}</span>
+              </button>
+
+              {/* Quick Sync My Stats if logged in */}
+              {session?.user && (session.user as any).username && (
+                <SyncStatsButton
+                  username={(session.user as any).username}
+                  isOwner={true}
+                  compact={true}
+                  className="!px-2.5 !py-1.5 !rounded-lg !text-xs !font-sans"
+                />
+              )}
             </div>
           </div>
 
