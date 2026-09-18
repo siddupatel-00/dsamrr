@@ -113,6 +113,13 @@ export const analyticsVisitors = sqliteTable("analytics_visitors", {
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
 }, (table) => [uniqueIndex("analytics_visitors_date_id_unique").on(table.date, table.id)]);
 
+export const analyticsPageviewLogs = sqliteTable("analytics_pageview_logs", {
+  id: text("id").primaryKey(),
+  visitorId: text("visitor_id"),
+  date: text("date").notNull(),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+}, (table) => [index("analytics_pageview_logs_created_idx").on(table.createdAt), index("analytics_pageview_logs_date_idx").on(table.date)]);
+
 export const paymentOrders = sqliteTable("payment_orders", {
   orderId: text("order_id").primaryKey(),
   slotId: text("slot_id").notNull(),

@@ -13,6 +13,7 @@ import {
   Radio,
   Share2,
 } from "lucide-react";
+import { AnalyticsLineGraph } from "@/components/AnalyticsLineGraph";
 
 interface LocationItem {
   id: string;
@@ -198,6 +199,9 @@ function getFullCountryName(country?: string): string {
           </div>
         </div>
       </div>
+
+      {/* Traffic Telemetry Timeline Line Graph */}
+      <AnalyticsLineGraph />
 
       {/* Grid: Countries & Cities Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -140,6 +140,17 @@ export async function POST(req: NextRequest) {
       args: [`${today}_${visitorId}`, today],
     });
 
+    // Record granular pageview event for timeseries charts
+    try {
+      const logId = `pv_${crypto.randomUUID()}`;
+      await client.execute({
+        sql: `INSERT INTO analytics_pageview_logs (id, visitor_id, date, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+        args: [logId, visitorId, today],
+      });
+    } catch (e) {
+      console.error("Failed to log pageview event:", e);
+    }
+
     if (visitorInsert.rowsAffected > 0) {
       await client.execute({
         sql: `UPDATE site_analytics SET unique_visitors = unique_visitors + 1 WHERE id = ?`,

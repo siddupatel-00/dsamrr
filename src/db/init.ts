@@ -111,6 +111,12 @@ export async function initDb(): Promise<void> {
           date TEXT NOT NULL,
           created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
         );`,
+        `CREATE TABLE IF NOT EXISTS analytics_pageview_logs (
+          id TEXT PRIMARY KEY,
+          visitor_id TEXT,
+          date TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+        );`,
         `CREATE TABLE IF NOT EXISTS payment_orders (
           order_id TEXT PRIMARY KEY,
           slot_id TEXT NOT NULL,
@@ -156,6 +162,8 @@ export async function initDb(): Promise<void> {
         `CREATE INDEX IF NOT EXISTS idx_daily_snapshots_platform_acc ON daily_snapshots(platform_account_id);`,
         `CREATE INDEX IF NOT EXISTS idx_daily_snapshots_platform_date ON daily_snapshots(platform, date);`,
         `CREATE INDEX IF NOT EXISTS idx_users_is_anon ON users(is_anonymous);`,
+        `CREATE INDEX IF NOT EXISTS idx_pageview_logs_created ON analytics_pageview_logs(created_at);`,
+        `CREATE INDEX IF NOT EXISTS idx_pageview_logs_date ON analytics_pageview_logs(date);`,
       ]);
 
       // Safe column additions for Pro Developer Membership
