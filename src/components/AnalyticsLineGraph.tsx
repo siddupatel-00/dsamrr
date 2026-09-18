@@ -223,46 +223,6 @@ export function AnalyticsLineGraph() {
             {data?.metricLabel || "Interactive visitor timeseries"}
           </p>
         </div>
-
-        {/* Metric Switcher Toggles */}
-        <div className="flex items-center gap-1.5 bg-zinc-950/80 p-1 rounded-xl border border-zinc-800/90 text-xs self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setMetric("both")}
-            className={`px-2.5 py-1 rounded-lg transition text-[11px] font-medium flex items-center gap-1.5 ${
-              metric === "both"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>All Metrics</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMetric("views")}
-            className={`px-2.5 py-1 rounded-lg transition text-[11px] font-medium flex items-center gap-1.5 ${
-              metric === "views"
-                ? "bg-zinc-800 text-emerald-300 shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Eye className="w-3 h-3 text-emerald-400" />
-            <span>Page Views</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMetric("visitors")}
-            className={`px-2.5 py-1 rounded-lg transition text-[11px] font-medium flex items-center gap-1.5 ${
-              metric === "visitors"
-                ? "bg-zinc-800 text-cyan-300 shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Users className="w-3 h-3 text-cyan-400" />
-            <span>Visitors</span>
-          </button>
-        </div>
       </div>
 
       {/* Timeframe Filter Bar */}
