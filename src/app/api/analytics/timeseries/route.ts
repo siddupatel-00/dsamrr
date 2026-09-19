@@ -293,6 +293,68 @@ export async function GET(req: NextRequest) {
         break;
       }
 
+      case "7d":
+      case "last7Days": {
+        metricLabel = "Last 7 Days";
+        const dateList: string[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now);
+          d.setUTCDate(now.getUTCDate() - i);
+          dateList.push(formatDate(d));
+        }
+
+        const siteRes = await client.execute({
+          sql: `SELECT date, page_views, unique_visitors FROM site_analytics WHERE date IN (${dateList.map(() => "?").join(",")})`,
+          args: dateList,
+        });
+
+        const rowsMap = new Map(siteRes.rows.map((r: any) => [r.date, r]));
+
+        dateList.forEach((dStr) => {
+          const dObj = new Date(`${dStr}T00:00:00Z`);
+          const label = `${dObj.getUTCDate()} ${MONTH_NAMES[dObj.getUTCMonth()]}`;
+          const r: any = rowsMap.get(dStr);
+          points.push({
+            label,
+            timeKey: dStr,
+            views: Number(r?.page_views || 0),
+            visitors: Number(r?.unique_visitors || 0),
+          });
+        });
+        break;
+      }
+
+      case "30d":
+      case "last30Days": {
+        metricLabel = "Last 30 Days";
+        const dateList: string[] = [];
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(now);
+          d.setUTCDate(now.getUTCDate() - i);
+          dateList.push(formatDate(d));
+        }
+
+        const siteRes = await client.execute({
+          sql: `SELECT date, page_views, unique_visitors FROM site_analytics WHERE date IN (${dateList.map(() => "?").join(",")})`,
+          args: dateList,
+        });
+
+        const rowsMap = new Map(siteRes.rows.map((r: any) => [r.date, r]));
+
+        dateList.forEach((dStr) => {
+          const dObj = new Date(`${dStr}T00:00:00Z`);
+          const label = `${dObj.getUTCDate()} ${MONTH_NAMES[dObj.getUTCMonth()]}`;
+          const r: any = rowsMap.get(dStr);
+          points.push({
+            label,
+            timeKey: dStr,
+            views: Number(r?.page_views || 0),
+            visitors: Number(r?.unique_visitors || 0),
+          });
+        });
+        break;
+      }
+
       case "thisWeek": {
         metricLabel = "This Week";
         // Get Monday of current week
@@ -423,6 +485,37 @@ export async function GET(req: NextRequest) {
             visitors: Number(r?.unique_visitors || 0),
           });
         });
+        break;
+      }
+
+      case "all":
+      case "allTime": {
+        metricLabel = "All Time";
+        const siteRes = await client.execute({
+          sql: `SELECT date, page_views, unique_visitors FROM site_analytics ORDER BY date ASC`,
+          args: [],
+        });
+        if (siteRes.rows.length === 0) {
+          points.push({
+            label: `${MONTH_NAMES[now.getUTCMonth()]} ${now.getUTCDate()}`,
+            timeKey: todayStr,
+            views: 0,
+            visitors: 0,
+          });
+        } else {
+          siteRes.rows.forEach((r: any) => {
+            const dObj = new Date(`${r.date}T00:00:00Z`);
+            const label = isNaN(dObj.getTime())
+              ? String(r.date)
+              : `${MONTH_NAMES[dObj.getUTCMonth()]} ${dObj.getUTCDate()}`;
+            points.push({
+              label,
+              timeKey: String(r.date),
+              views: Number(r.page_views || 0),
+              visitors: Number(r.unique_visitors || 0),
+            });
+          });
+        }
         break;
       }
 

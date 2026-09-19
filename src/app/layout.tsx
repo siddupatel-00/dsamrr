@@ -4,6 +4,7 @@ import { Terminal, Trophy } from "lucide-react";
 import { AuthProvider } from "@/components/AuthProvider";
 import { UserNav } from "@/components/UserNav";
 import { VisitorCounter } from "@/components/VisitorCounter";
+import { HeaderNav } from "@/components/HeaderNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,19 +38,10 @@ export default function RootLayout({
                 <span className="font-bold text-sm tracking-tight font-mono">DSAMRR</span>
               </Link>
 
-              <Link
-                href="/"
-                className="text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5 text-xs font-medium ml-2"
-              >
-                <Trophy className="w-3.5 h-3.5 text-zinc-500" />
-                <span>Leaderboard</span>
-              </Link>
+              <HeaderNav />
             </div>
 
-            {/* Center Total Visitors Badge */}
-            <div className="flex items-center justify-center">
-              <VisitorCounter />
-            </div>
+            <VisitorCounter />
 
             <div className="flex items-center gap-3">
               {/* User Authentication & Profile Menu */}

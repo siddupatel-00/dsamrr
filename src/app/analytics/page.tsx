@@ -1,24 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { Globe, ArrowLeft, RefreshCw, Lock, Key, AlertCircle } from "lucide-react";
+import { useAnalyticsAuth } from "@/hooks/useAnalyticsAuth";
+import { PlausibleChartCard } from "@/components/PlausibleChartCard";
 import {
-  Globe,
-  MapPin,
-  TrendingUp,
-  Activity,
-  ArrowLeft,
-  Users,
-  Compass,
-  Radio,
-  Share2,
-} from "lucide-react";
-import { AnalyticsLineGraph } from "@/components/AnalyticsLineGraph";
+  PlausibleBreakdownCard,
+  BreakdownItem,
+  TabOption,
+} from "@/components/PlausibleBreakdownCard";
+import { TrafficDonutCard } from "@/components/TrafficDonutCard";
+import { RangeOption } from "@/components/PlausibleChartCard";
 
 interface LocationItem {
   id: string;
   city: string;
   country: string;
+  countryCode: string;
   lat: number;
   lng: number;
   visitCount: number;
@@ -32,22 +31,49 @@ interface SourceItem {
   percentage: number;
 }
 
-interface AnalyticsData {
+interface ChannelItem {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+interface BreakdownMetric {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+interface AnalyticsApiResponse {
   success: boolean;
+  range?: string;
+  totalViews: number;
   totalVisitors: number;
+  onlineCount: number;
   uniqueCountries: number;
   uniqueCities: number;
   locations: LocationItem[];
   sources: SourceItem[];
+  channels: ChannelItem[];
+  devices: BreakdownMetric[];
+  browsers: BreakdownMetric[];
+  os: BreakdownMetric[];
 }
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+  const { isUnlocked, loading: authLoading, unlock } = useAnalyticsAuth();
+  const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
+  const [data, setData] = useState<AnalyticsApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [passInput, setPassInput] = useState("");
+  const [unlockErr, setUnlockErr] = useState<string | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = async (rangeToFetch: RangeOption = selectedRange, isManual = false) => {
+    if (!isUnlocked) return;
+    if (isManual) setRefreshing(true);
     try {
-      const res = await fetch("/api/analytics/map");
+      const res = await fetch(`/api/analytics/map?range=${rangeToFetch}&t=${Date.now()}`);
       const json = await res.json();
       if (json.success) {
         setData(json);
@@ -56,278 +82,348 @@ export default function AnalyticsPage() {
       console.error("Failed to load analytics:", e);
     } finally {
       setLoading(false);
+      if (isManual) setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchAnalytics();
-    const interval = setInterval(fetchAnalytics, 10000);
+    if (!isUnlocked) return;
+    fetchAnalytics(selectedRange);
+    const interval = setInterval(() => fetchAnalytics(selectedRange, false), 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedRange, isUnlocked]);
 
-function getFullCountryName(country?: string): string {
-  if (!country) return "Global / Unknown";
-  const trimmed = country.trim();
-  if (trimmed.length === 2) {
-    try {
-      const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-      return regionNames.of(trimmed.toUpperCase()) || trimmed;
-    } catch {
-      return trimmed;
-    }
-  }
-  return trimmed;
-}
-
-  // Aggregate country counts
-  const countryBreakdown = React.useMemo(() => {
+  // Locations breakdown (Country & City tabs)
+  const locationTabs: TabOption[] = useMemo(() => {
     if (!data?.locations) return [];
-    const map = new Map<string, { country: string; totalVisits: number; cities: Set<string> }>();
-    
+
+    // Group by country
+    const countryMap = new Map<string, { count: number; code?: string }>();
     data.locations.forEach((loc) => {
-      const fullName = getFullCountryName(loc.country);
-      const existing = map.get(fullName) || { country: fullName, totalVisits: 0, cities: new Set() };
-      existing.totalVisits += loc.visitCount;
-      if (loc.city) existing.cities.add(loc.city);
-      map.set(fullName, existing);
+      const country = loc.country || "Global";
+      const existing = countryMap.get(country) || { count: 0, code: loc.countryCode };
+      existing.count += loc.visitCount;
+      if (loc.countryCode && !existing.code) existing.code = loc.countryCode;
+      countryMap.set(country, existing);
     });
 
-    const total = Array.from(map.values()).reduce((sum, c) => sum + c.totalVisits, 0) || 1;
+    const totalCountryVisits =
+      Array.from(countryMap.values()).reduce((sum, c) => sum + c.count, 0) || 1;
 
-    return Array.from(map.values())
-      .map((c) => ({
-        country: c.country,
-        totalVisits: c.totalVisits,
-        cityCount: c.cities.size,
-        percentage: Math.round((c.totalVisits / total) * 100),
+    const countryItems: BreakdownItem[] = Array.from(countryMap.entries())
+      .map(([country, info]) => ({
+        label: country,
+        count: info.count,
+        percentage: Math.round((info.count / totalCountryVisits) * 100),
+        code: info.code,
       }))
-      .sort((a, b) => b.totalVisits - a.totalVisits);
+      .sort((a, b) => b.count - a.count);
+
+    // Group by city
+    const cityMap = new Map<string, { count: number; country: string; code?: string }>();
+    data.locations.forEach((loc) => {
+      const city = loc.city || "Unknown";
+      const existing = cityMap.get(city) || {
+        count: 0,
+        country: loc.country,
+        code: loc.countryCode,
+      };
+      existing.count += loc.visitCount;
+      cityMap.set(city, existing);
+    });
+
+    const totalCityVisits =
+      Array.from(cityMap.values()).reduce((sum, c) => sum + c.count, 0) || 1;
+
+    const cityItems: BreakdownItem[] = Array.from(cityMap.entries())
+      .map(([city, info]) => ({
+        label: city,
+        count: info.count,
+        percentage: Math.round((info.count / totalCityVisits) * 100),
+        sublabel: info.country,
+        code: info.code,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    return [
+      { id: "country", label: "Country", items: countryItems },
+      { id: "city", label: "City", items: cityItems },
+    ];
   }, [data]);
 
-  // Sorted cities breakdown
-  const cityBreakdown = React.useMemo(() => {
-    if (!data?.locations) return [];
-    const total = data.locations.reduce((sum, l) => sum + l.visitCount, 0) || 1;
-    return [...data.locations]
-      .sort((a, b) => b.visitCount - a.visitCount)
-      .map((l) => ({
-        city: l.city,
-        country: getFullCountryName(l.country),
-        visitCount: l.visitCount,
-        referrer: l.referrer,
-        percentage: Math.round((l.visitCount / total) * 100),
-      }));
+  // Devices breakdown (Device, Browser, OS tabs)
+  const deviceTabs: TabOption[] = useMemo(() => {
+    if (!data) return [];
+
+    const deviceItems: BreakdownItem[] = (data.devices || []).map((d) => ({
+      label: d.name,
+      count: d.count,
+      percentage: d.percentage,
+    }));
+
+    const browserItems: BreakdownItem[] = (data.browsers || []).map((b) => ({
+      label: b.name,
+      count: b.count,
+      percentage: b.percentage,
+    }));
+
+    const osItems: BreakdownItem[] = (data.os || []).map((o) => ({
+      label: o.name,
+      count: o.count,
+      percentage: o.percentage,
+    }));
+
+    return [
+      { id: "device", label: "Device", items: deviceItems },
+      { id: "browser", label: "Browser", items: browserItems },
+      { id: "os", label: "OS", items: osItems },
+    ];
   }, [data]);
 
-  const topSource = data?.sources?.[0]?.source || "Direct";
+  if (authLoading) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-zinc-400 font-mono text-xs">
+          <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
+          <span>Checking authorization...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md bg-[#141517] border border-[#242528] rounded-[24px] p-6 sm:p-8 shadow-2xl space-y-6 font-sans text-center">
+          <div className="mx-auto w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/80 flex items-center justify-center text-zinc-300 shadow-inner">
+            <Lock className="w-6 h-6 text-zinc-300" />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="text-xl font-bold text-white tracking-tight">
+              Analytics Restricted
+            </h1>
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-sm mx-auto">
+              This analytics dashboard is private. Please enter your authorized access key or visit the{" "}
+              <Link href="/privacy" className="text-emerald-400 hover:underline font-medium">
+                Privacy tab
+              </Link>
+              .
+            </p>
+          </div>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!passInput.trim()) return;
+              setUnlocking(true);
+              setUnlockErr(null);
+              const res = await unlock(passInput);
+              setUnlocking(false);
+              if (!res.success) {
+                setUnlockErr(res.error || "Incorrect access key.");
+              }
+            }}
+            className="space-y-4 pt-2 text-left"
+          >
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
+                <Key className="w-4 h-4" />
+              </div>
+              <input
+                type="password"
+                value={passInput}
+                onChange={(e) => setPassInput(e.target.value)}
+                placeholder="Enter access key..."
+                autoFocus
+                className="w-full bg-[#0d0e10] border border-[#2d2e33] rounded-xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-400 transition"
+              />
+            </div>
+
+            {unlockErr && (
+              <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/60 flex items-center gap-2 text-xs text-red-300">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                <span>{unlockErr}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={unlocking || !passInput.trim()}
+              className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:cursor-not-allowed"
+            >
+              {unlocking ? "Verifying..." : "Unlock Analytics"}
+            </button>
+
+            <div className="pt-2 text-center">
+              <Link
+                href="/map"
+                className="text-[11px] text-cyan-400 hover:underline flex items-center justify-center gap-1.5"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>View Public 3D Visitor Map instead</span>
+              </Link>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 py-6 px-4 max-w-5xl mx-auto space-y-6 font-mono selection:bg-zinc-800 selection:text-white">
-      {/* Header Navigation */}
-      <div className="flex items-center justify-end gap-2 border-b border-zinc-800/80 pb-3">
-        <Link
-          href="/map"
-          className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-300 hover:text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-        >
-          <Globe className="w-3.5 h-3.5 text-emerald-400" />
-          <span>3D Globe View</span>
-        </Link>
-        <Link
-          href="/"
-          className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5 cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Leaderboard</span>
-        </Link>
-      </div>
-
-      {/* Top 4 Key Metric Badges */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {/* Total Visitors */}
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur space-y-1.5">
-          <div className="flex items-center justify-between text-zinc-500 text-xs">
-            <span>Total Visitors</span>
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
-            {loading ? "..." : (data?.totalVisitors ?? 0)}
-          </div>
-          <div className="text-[10px] text-zinc-500">
-            Across global sessions
-          </div>
+    <div className="max-w-6xl mx-auto w-full space-y-6 px-2 sm:px-4 py-4 font-sans antialiased selection:bg-sky-500/30 selection:text-white">
+      {/* Top Header Navigation - Simple & Minimalistic */}
+      <div className="flex items-center justify-between border-b border-[#222327] pb-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            Analytics
+          </h1>
+          <button
+            type="button"
+            onClick={() => fetchAnalytics(selectedRange, true)}
+            disabled={refreshing}
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition cursor-pointer"
+            title="Refresh analytics data"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-sky-400" : ""}`}
+            />
+          </button>
         </div>
 
-        {/* Unique Countries */}
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur space-y-1.5">
-          <div className="flex items-center justify-between text-zinc-500 text-xs">
-            <span>Countries</span>
-            <Globe className="w-3.5 h-3.5 text-blue-400" />
-          </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
-            {loading ? "..." : (data?.uniqueCountries ?? 0)}
-          </div>
-          <div className="text-[10px] text-zinc-500">
-            Worldwide regions
-          </div>
-        </div>
-
-        {/* Unique Cities */}
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur space-y-1.5">
-          <div className="flex items-center justify-between text-zinc-500 text-xs">
-            <span>Cities</span>
-            <MapPin className="w-3.5 h-3.5 text-yellow-400" />
-          </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
-            {loading ? "..." : (data?.uniqueCities ?? 0)}
-          </div>
-          <div className="text-[10px] text-zinc-500">
-            Geolocated hubs
-          </div>
-        </div>
-
-        {/* Top Traffic Source */}
-        <div className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur space-y-1.5">
-          <div className="flex items-center justify-between text-zinc-500 text-xs">
-            <span>Top Referrer</span>
-            <Share2 className="w-3.5 h-3.5 text-purple-400" />
-          </div>
-          <div className="text-base font-bold text-white truncate tracking-tight">
-            {loading ? "..." : topSource}
-          </div>
-          <div className="text-[10px] text-zinc-500">
-            Leading traffic source
-          </div>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/map"
+            className="px-3 py-1.5 rounded-xl bg-[#1c1d21] hover:bg-[#25262c] border border-[#2e3036] text-xs font-medium text-zinc-300 hover:text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <Globe className="w-3.5 h-3.5 text-sky-400" />
+            <span>3D Globe</span>
+          </Link>
+          <Link
+            href="/"
+            className="px-3 py-1.5 rounded-xl bg-[#1c1d21] hover:bg-[#25262c] border border-[#2e3036] text-xs font-medium text-zinc-400 hover:text-zinc-200 transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Leaderboard</span>
+          </Link>
         </div>
       </div>
 
-      {/* Traffic Telemetry Timeline Line Graph */}
-      <AnalyticsLineGraph />
+      {/* Hero Chart Card (outbid.lol Pirsch exact layout) */}
+      <PlausibleChartCard
+        totalVisitors={data?.totalVisitors ?? 0}
+        totalViews={data?.totalViews ?? 0}
+        onlineCount={data?.onlineCount ?? 1}
+        domainName="dsamrr.com"
+        range={selectedRange}
+        onRangeChange={(newRange) => {
+          setSelectedRange(newRange);
+          fetchAnalytics(newRange, false);
+        }}
+        onRefresh={() => fetchAnalytics(selectedRange, true)}
+      />
 
-      {/* Grid: Countries & Cities Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Countries Breakdown Table */}
-        <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur space-y-3">
-          <div className="flex items-center justify-between text-xs border-b border-zinc-800/60 pb-2">
-            <span className="font-bold text-zinc-300 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-blue-400" />
-              <span>Countries ({countryBreakdown.length})</span>
-            </span>
-            <span className="text-[10px] text-zinc-500">Visits (% of total)</span>
-          </div>
+      {/* Second Row: Locations & Traffic Sources Donut */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Locations Card [Country] City */}
+        <PlausibleBreakdownCard
+          tabs={locationTabs}
+          defaultTabId="country"
+          emptyMessage="No location telemetry recorded yet"
+          detailsModalTitle="All Locations Breakdown"
+        />
 
-          <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-            {loading ? (
-              <div className="text-xs text-zinc-500 py-4 text-center">Loading countries...</div>
-            ) : countryBreakdown.length === 0 ? (
-              <div className="text-xs text-zinc-500 py-4 text-center">No telemetry recorded yet</div>
-            ) : (
-              countryBreakdown.map((item, idx) => (
-                <div key={idx} className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800/70 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-zinc-200">
-                      {item.country}
-                    </span>
-                    <span className="text-emerald-400 font-bold">
-                      {item.totalVisits} <span className="text-zinc-500 text-[10px] font-normal">({item.percentage}%)</span>
-                    </span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full"
-                      style={{ width: `${Math.max(item.percentage, 4)}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-zinc-500">
-                    <span>{item.cityCount} {item.cityCount === 1 ? "city" : "cities"}</span>
-                    <span>Rank #{idx + 1}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Cities Breakdown Table */}
-        <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur space-y-3">
-          <div className="flex items-center justify-between text-xs border-b border-zinc-800/60 pb-2">
-            <span className="font-bold text-zinc-300 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-yellow-400" />
-              <span>Cities ({cityBreakdown.length})</span>
-            </span>
-            <span className="text-[10px] text-zinc-500">Visits (% of total)</span>
-          </div>
-
-          <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-            {loading ? (
-              <div className="text-xs text-zinc-500 py-4 text-center">Loading cities...</div>
-            ) : cityBreakdown.length === 0 ? (
-              <div className="text-xs text-zinc-500 py-4 text-center">No telemetry recorded yet</div>
-            ) : (
-              cityBreakdown.map((item, idx) => (
-                <div key={idx} className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800/70 space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="text-zinc-500 text-[10px]">#{idx + 1}</span>
-                      <span className="font-medium text-zinc-200 truncate">
-                        {item.city}
-                      </span>
-                      <span className="text-zinc-500 text-[10px]">({item.country})</span>
-                    </div>
-                    <span className="text-emerald-400 font-bold shrink-0 ml-2">
-                      {item.visitCount} <span className="text-zinc-500 text-[10px] font-normal">({item.percentage}%)</span>
-                    </span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-yellow-500 to-emerald-500 rounded-full"
-                      style={{ width: `${Math.max(item.percentage, 4)}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-zinc-500">
-                    <span>Source: {item.referrer}</span>
-                    <span>Active hub</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        {/* Traffic Acquisition Donut Card [Channel] Referrer Campaign */}
+        <TrafficDonutCard
+          channels={data?.channels || []}
+          referrers={data?.sources || []}
+        />
       </div>
 
-      {/* Traffic Sources Breakdown */}
-      {data?.sources && data.sources.length > 0 && (
-        <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/80 backdrop-blur space-y-3">
-          <div className="flex items-center justify-between text-xs border-b border-zinc-800/60 pb-2">
-            <span className="font-bold text-zinc-300 flex items-center gap-1.5">
-              <Share2 className="w-3.5 h-3.5 text-purple-400" />
-              <span>Traffic Sources</span>
-            </span>
-            <span className="text-[10px] text-zinc-500">Referrals Breakdown</span>
-          </div>
+      {/* Third Row: Devices Breakdown [Device] Browser OS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PlausibleBreakdownCard
+          tabs={deviceTabs}
+          defaultTabId="device"
+          emptyMessage="No device telemetry recorded yet"
+          detailsModalTitle="Devices & Browsers Breakdown"
+        />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {data.sources.map((s, idx) => (
-              <div key={idx} className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800/70 space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-zinc-200">{s.source}</span>
-                  <span className="text-emerald-400 font-bold">{s.count}</span>
+        {/* Minimalist Quick Insights / Overview */}
+        <div className="w-full rounded-[22px] bg-[#17181a] border border-[#242528] p-5 sm:p-6 space-y-4 shadow-xl select-none font-sans flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-[#222327] pb-3 min-h-[44px]">
+              <div className="flex items-center gap-1 bg-[#1c1d21] p-1 rounded-xl border border-[#2e3036]">
+                <span className="px-3 py-1 rounded-lg text-xs font-medium bg-[#27272a] text-white shadow-sm">
+                  Overview
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider">
+                Telemetry
+              </span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="p-3.5 rounded-xl bg-[#1c1d21] border border-[#2e3036] space-y-1">
+                <span className="text-[11px] text-zinc-400 font-normal">
+                  Total Page Views
+                </span>
+                <div className="text-xl font-bold text-white font-mono">
+                  {(data?.totalViews ?? 0).toLocaleString()}
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                  <div
-                    className="h-full bg-purple-500 rounded-full"
-                    style={{ width: `${Math.max(s.percentage, 5)}%` }}
-                  />
-                </div>
-                <div className="text-right text-[10px] text-zinc-500">
-                  {s.percentage}% of traffic
+                <div className="text-[10px] text-zinc-500">
+                  All visits & refreshes
                 </div>
               </div>
-            ))}
+
+              <div className="p-3.5 rounded-xl bg-[#1c1d21] border border-[#2e3036] space-y-1">
+                <span className="text-[11px] text-zinc-400 font-normal">
+                  Unique Visitors
+                </span>
+                <div className="text-xl font-bold text-sky-400 font-mono">
+                  {(data?.totalVisitors ?? 0).toLocaleString()}
+                </div>
+                <div className="text-[10px] text-zinc-500">
+                  Distinct people
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#1c1d21] border border-[#2e3036] space-y-1">
+                <span className="text-[11px] text-zinc-400 font-normal">
+                  Tracked Cities
+                </span>
+                <div className="text-xl font-bold text-zinc-200 font-mono">
+                  {data?.uniqueCities ?? 0}
+                </div>
+                <div className="text-[10px] text-zinc-500">
+                  Global locations
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-[#1c1d21] border border-[#2e3036] space-y-1">
+                <span className="text-[11px] text-zinc-400 font-normal">
+                  Primary Referrer
+                </span>
+                <div className="text-base font-bold text-white truncate font-mono">
+                  {data?.sources?.[0]?.source || "Direct"}
+                </div>
+                <div className="text-[10px] text-zinc-500">
+                  Leading source
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Matching Bottom Line to align card bottoms */}
+          <div className="pt-2 border-t border-zinc-800/40 flex items-center justify-between text-xs">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+              Live Aggregate
+            </span>
+            <span className="text-[11px] font-mono text-zinc-500">
+              4 Metrics
+            </span>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

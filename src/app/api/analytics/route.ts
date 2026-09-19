@@ -48,10 +48,12 @@ export async function GET(req: NextRequest) {
 
     await initDb();
     const result = await client.execute(`
-      SELECT COALESCE(SUM(unique_visitors), 0) as total_visitors
+      SELECT COALESCE(SUM(page_views), 0) as total_views,
+             COALESCE(SUM(unique_visitors), 0) as total_visitors
       FROM site_analytics
     `);
 
+    const totalViews = Number(result.rows[0]?.total_views || 0);
     const totalVisitors = Number(result.rows[0]?.total_visitors || 0);
     cachedTotalVisitors = {
       count: totalVisitors,
@@ -61,11 +63,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
+        totalViews,
         totalVisitors,
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=10, stale-while-revalidate=59",
+          "Cache-Control": "public, s-maxage=5, stale-while-revalidate=15",
         },
       }
     );
@@ -82,16 +85,23 @@ export async function POST(req: NextRequest) {
     let visitorId = req.cookies.get(cookieName)?.value;
     let newVisitorCookie = false;
 
+    let clientReferrer = "";
+    let bodyVisitorId = "";
+    try {
+      const body = await req.json();
+      clientReferrer = body?.referrer || "";
+      bodyVisitorId = body?.visitorId || "";
+    } catch {}
+
+    if ((!visitorId || !/^[a-f0-9]{32}$/.test(visitorId)) && bodyVisitorId && /^[a-f0-9]{32}$/.test(bodyVisitorId)) {
+      visitorId = bodyVisitorId;
+      newVisitorCookie = true;
+    }
+
     if (!visitorId || !/^[a-f0-9]{32}$/.test(visitorId)) {
       visitorId = crypto.randomBytes(16).toString("hex");
       newVisitorCookie = true;
     }
-
-    let clientReferrer = "";
-    try {
-      const body = await req.json();
-      clientReferrer = body?.referrer || "";
-    } catch {}
 
     const source = parseTrafficSource(clientReferrer || req.headers.get("referer"));
 
@@ -123,60 +133,64 @@ export async function POST(req: NextRequest) {
     const lng = Math.round((isNaN(rawLng) ? defaultLng : rawLng) * 10) / 10;
     const country = rawCountry;
 
-    // Execute atomic analytics tracking in one batch
-    await client.execute({
-      sql: `
-        INSERT INTO site_analytics (id, date, page_views, unique_visitors)
-        VALUES (?, ?, 1, 0)
-        ON CONFLICT(id) DO UPDATE SET
-          page_views = page_views + 1,
-          updated_at = CURRENT_TIMESTAMP
-      `,
-      args: [`analytics_${today}`, today],
-    });
-
-    const visitorInsert = await client.execute({
-      sql: `INSERT OR IGNORE INTO analytics_visitors (id, date) VALUES (?, ?)`,
-      args: [`${today}_${visitorId}`, today],
-    });
-
-    // Record granular pageview event for timeseries charts
+    // Execute atomic analytics tracking (gracefully handle read-only database connections)
     try {
-      const logId = `pv_${crypto.randomUUID()}`;
-      await client.execute({
-        sql: `INSERT INTO analytics_pageview_logs (id, visitor_id, date, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
-        args: [logId, visitorId, today],
-      });
-    } catch (e) {
-      console.error("Failed to log pageview event:", e);
-    }
-
-    if (visitorInsert.rowsAffected > 0) {
-      await client.execute({
-        sql: `UPDATE site_analytics SET unique_visitors = unique_visitors + 1 WHERE id = ?`,
-        args: [`analytics_${today}`],
-      });
-
-      // Insert / increment visitor location marker in Turso DB
-      const locId = `loc_${country}_${city.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
       await client.execute({
         sql: `
-          INSERT INTO visitor_locations (id, city, country, country_code, lat, lng, referrer, visit_count, last_visited_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+          INSERT INTO site_analytics (id, date, page_views, unique_visitors)
+          VALUES (?, ?, 1, 0)
           ON CONFLICT(id) DO UPDATE SET
-            visit_count = visit_count + 1,
-            last_visited_at = CURRENT_TIMESTAMP,
-            referrer = excluded.referrer
+            page_views = page_views + 1,
+            updated_at = CURRENT_TIMESTAMP
         `,
-        args: [locId, city, country, country, lat, lng, source],
+        args: [`analytics_${today}`, today],
       });
+
+      const visitorInsert = await client.execute({
+        sql: `INSERT OR IGNORE INTO analytics_visitors (id, date) VALUES (?, ?)`,
+        args: [`${today}_${visitorId}`, today],
+      });
+
+      // Record granular pageview event for timeseries charts
+      try {
+        const logId = `pv_${crypto.randomUUID()}`;
+        await client.execute({
+          sql: `INSERT INTO analytics_pageview_logs (id, visitor_id, date, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+          args: [logId, visitorId, today],
+        });
+      } catch (e) {}
+
+      if (visitorInsert.rowsAffected > 0) {
+        await client.execute({
+          sql: `UPDATE site_analytics SET unique_visitors = unique_visitors + 1 WHERE id = ?`,
+          args: [`analytics_${today}`],
+        });
+
+        // Insert / increment visitor location marker in Turso DB
+        const locId = `loc_${country}_${city.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+        await client.execute({
+          sql: `
+            INSERT INTO visitor_locations (id, city, country, country_code, lat, lng, referrer, visit_count, last_visited_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+            ON CONFLICT(id) DO UPDATE SET
+              visit_count = visit_count + 1,
+              last_visited_at = CURRENT_TIMESTAMP,
+              referrer = excluded.referrer
+          `,
+          args: [locId, city, country, country, lat, lng, source],
+        });
+      }
+    } catch (writeErr: any) {
+      console.warn("Analytics write skipped (read-only token or offline):", writeErr?.message || writeErr);
     }
 
     const result = await client.execute(`
-      SELECT COALESCE(SUM(unique_visitors), 0) as total_visitors
+      SELECT COALESCE(SUM(page_views), 0) as total_views,
+             COALESCE(SUM(unique_visitors), 0) as total_visitors
       FROM site_analytics
     `);
 
+    const totalViews = Number(result.rows[0]?.total_views || 0);
     const totalVisitors = Number(result.rows[0]?.total_visitors || 0);
     cachedTotalVisitors = {
       count: totalVisitors,
@@ -185,6 +199,7 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
+      totalViews,
       totalVisitors,
     });
 

@@ -209,19 +209,14 @@ export function AnalyticsLineGraph() {
 
   return (
     <div className="w-full rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur p-4 sm:p-6 space-y-5 font-mono shadow-xl">
-      {/* Top Header: Title, Metric Selector, Refresh */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-emerald-400" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider font-sans">
-              Traffic Telemetry Timeline
-            </h2>
-            {loading && <RotateCw className="w-3.5 h-3.5 text-zinc-500 animate-spin ml-1" />}
-          </div>
-          <p className="text-xs text-zinc-400 font-sans">
-            {data?.metricLabel || "Interactive visitor timeseries"}
-          </p>
+      {/* Top Header: Title */}
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+        <div className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-emerald-400" />
+          <h2 className="text-sm font-semibold text-zinc-200 font-mono tracking-tight">
+            Analytics
+          </h2>
+          {loading && <RotateCw className="w-3.5 h-3.5 text-zinc-500 animate-spin ml-1" />}
         </div>
       </div>
 
