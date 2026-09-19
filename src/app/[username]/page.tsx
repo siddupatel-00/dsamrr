@@ -555,7 +555,7 @@ export default async function UserProfilePage({ params }: PageProps) {
       <div className="p-4 rounded-2xl bg-[#0e0f14] border border-[#1f2128] space-y-3 font-mono shadow-lg">
         <div className="flex items-center justify-between">
           <div className="text-xs font-bold text-zinc-200 font-sans">
-            30-Day Activity Grind
+            Past 30 Days
           </div>
           <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
             <span>0</span>
