@@ -60,7 +60,7 @@ interface AnalyticsApiResponse {
 }
 
 export default function AnalyticsPage() {
-  const { isUnlocked, loading: authLoading, unlock } = useAnalyticsAuth();
+  const { isUnlocked, loading: authLoading, unlock, lock } = useAnalyticsAuth();
   const [selectedRange, setSelectedRange] = useState<RangeOption>("7d");
   const [data, setData] = useState<AnalyticsApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -291,6 +291,15 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => lock()}
+            className="px-3 py-1.5 rounded-xl bg-[#1c1d21] hover:bg-red-500/10 hover:border-red-500/30 border border-[#2e3036] text-xs font-medium text-zinc-400 hover:text-red-400 transition flex items-center gap-1.5 cursor-pointer"
+            title="Lock Analytics"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Lock</span>
+          </button>
           <Link
             href="/map"
             className="px-3 py-1.5 rounded-xl bg-[#1c1d21] hover:bg-[#25262c] border border-[#2e3036] text-xs font-medium text-zinc-300 hover:text-white transition flex items-center gap-1.5 shadow-sm cursor-pointer"
