@@ -37,6 +37,21 @@ interface PlatformStatItem {
   todayHard: number;
   todayTotal: number;
   todayScore: number;
+  sevenDaysEasy: number;
+  sevenDaysMedium: number;
+  sevenDaysHard: number;
+  sevenDaysTotal: number;
+  sevenDaysScore: number;
+  thisMonthEasy: number;
+  thisMonthMedium: number;
+  thisMonthHard: number;
+  thisMonthTotal: number;
+  thisMonthScore: number;
+  lastMonthEasy: number;
+  lastMonthMedium: number;
+  lastMonthHard: number;
+  lastMonthTotal: number;
+  lastMonthScore: number;
   allTimeEasy: number;
   allTimeMedium: number;
   allTimeHard: number;
@@ -63,6 +78,24 @@ interface UserLeaderboardEntry {
   todayTotal: number;
   todayScore: number;
   todayRank?: number;
+  sevenDaysEasy?: number;
+  sevenDaysMedium?: number;
+  sevenDaysHard?: number;
+  sevenDaysTotal?: number;
+  sevenDaysScore?: number;
+  sevenDaysRank?: number;
+  thisMonthEasy?: number;
+  thisMonthMedium?: number;
+  thisMonthHard?: number;
+  thisMonthTotal?: number;
+  thisMonthScore?: number;
+  thisMonthRank?: number;
+  lastMonthEasy?: number;
+  lastMonthMedium?: number;
+  lastMonthHard?: number;
+  lastMonthTotal?: number;
+  lastMonthScore?: number;
+  lastMonthRank?: number;
   allTimeEasy: number;
   allTimeMedium: number;
   allTimeHard: number;
@@ -74,6 +107,11 @@ interface UserLeaderboardEntry {
   streakRank?: number;
   lastActiveDate: string | null;
   platformBreakdown?: Record<string, PlatformStatItem>;
+  displayEasy?: number;
+  displayMedium?: number;
+  displayHard?: number;
+  displayTotal?: number;
+  displayScore?: number;
 }
 
 export default function LeaderboardPage() {
@@ -89,10 +127,16 @@ export default function LeaderboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<{
     todaysGrind: UserLeaderboardEntry[];
+    sevenDays?: UserLeaderboardEntry[];
+    thisMonth?: UserLeaderboardEntry[];
+    lastMonth?: UserLeaderboardEntry[];
     allTime: UserLeaderboardEntry[];
     streaks: UserLeaderboardEntry[];
   }>({
     todaysGrind: [],
+    sevenDays: [],
+    thisMonth: [],
+    lastMonth: [],
     allTime: [],
     streaks: [],
   });
@@ -172,15 +216,6 @@ export default function LeaderboardPage() {
 
   const isAllSelected = selectedPlatforms.length === ALL_PLATFORM_IDS.length;
 
-  const getMultiplier = () => {
-    if (activeTab === "7days") return 4.5;
-    if (activeTab === "thisMonth") return 14;
-    if (activeTab === "lastMonth") return 22;
-    return 1;
-  };
-
-  const mult = getMultiplier();
-
   // Dynamic ranking and filtering by platform selection
   const getProcessedList = () => {
     let rawList: UserLeaderboardEntry[] = [];
@@ -188,6 +223,18 @@ export default function LeaderboardPage() {
       rawList = leaderboardData.streaks;
     } else if (activeTab === "allTime") {
       rawList = leaderboardData.allTime;
+    } else if (activeTab === "7days") {
+      rawList = leaderboardData.sevenDays && leaderboardData.sevenDays.length > 0
+        ? leaderboardData.sevenDays
+        : leaderboardData.todaysGrind;
+    } else if (activeTab === "thisMonth") {
+      rawList = leaderboardData.thisMonth && leaderboardData.thisMonth.length > 0
+        ? leaderboardData.thisMonth
+        : leaderboardData.todaysGrind;
+    } else if (activeTab === "lastMonth") {
+      rawList = leaderboardData.lastMonth && leaderboardData.lastMonth.length > 0
+        ? leaderboardData.lastMonth
+        : leaderboardData.todaysGrind;
     } else {
       rawList = leaderboardData.todaysGrind;
     }
@@ -197,34 +244,53 @@ export default function LeaderboardPage() {
     }
 
     let computedList = rawList.map((entry) => {
-      let easy = 0, med = 0, hard = 0, total = 0;
-      let allEasy = 0, allMed = 0, allHard = 0, allTotal = 0;
+      let easy = 0, med = 0, hard = 0, total = 0, score = 0;
 
       selectedPlatforms.forEach((p) => {
         const stats = entry.platformBreakdown?.[p];
         if (stats) {
-          easy += stats.todayEasy;
-          med += stats.todayMedium;
-          hard += stats.todayHard;
-          total += stats.todayTotal;
-
-          allEasy += stats.allTimeEasy;
-          allMed += stats.allTimeMedium;
-          allHard += stats.allTimeHard;
-          allTotal += stats.allTimeTotal;
+          if (activeTab === "allTime") {
+            easy += stats.allTimeEasy;
+            med += stats.allTimeMedium;
+            hard += stats.allTimeHard;
+            total += stats.allTimeTotal;
+            score += stats.allTimeScore;
+          } else if (activeTab === "7days") {
+            easy += stats.sevenDaysEasy;
+            med += stats.sevenDaysMedium;
+            hard += stats.sevenDaysHard;
+            total += stats.sevenDaysTotal;
+            score += stats.sevenDaysScore;
+          } else if (activeTab === "thisMonth") {
+            easy += stats.thisMonthEasy;
+            med += stats.thisMonthMedium;
+            hard += stats.thisMonthHard;
+            total += stats.thisMonthTotal;
+            score += stats.thisMonthScore;
+          } else if (activeTab === "lastMonth") {
+            easy += stats.lastMonthEasy;
+            med += stats.lastMonthMedium;
+            hard += stats.lastMonthHard;
+            total += stats.lastMonthTotal;
+            score += stats.lastMonthScore;
+          } else {
+            // today or streak
+            easy += stats.todayEasy;
+            med += stats.todayMedium;
+            hard += stats.todayHard;
+            total += stats.todayTotal;
+            score += stats.todayScore;
+          }
         }
       });
 
       return {
         ...entry,
-        todayEasy: easy,
-        todayMedium: med,
-        todayHard: hard,
-        todayTotal: total,
-        allTimeEasy: allEasy,
-        allTimeMedium: allMed,
-        allTimeHard: allHard,
-        allTotal: allTotal,
+        displayEasy: easy,
+        displayMedium: med,
+        displayHard: hard,
+        displayTotal: total,
+        displayScore: score,
       };
     });
 
@@ -235,10 +301,10 @@ export default function LeaderboardPage() {
       return hasLinked;
     });
 
-    if (activeTab === "allTime") {
-      computedList.sort((a, b) => b.allTimeTotal - a.allTimeTotal);
-    } else if (activeTab !== "streak") {
-      computedList.sort((a, b) => b.todayTotal - a.todayTotal);
+    if (activeTab === "streak") {
+      // Keep streak ordering from rawList
+    } else {
+      computedList.sort((a, b) => b.displayTotal - a.displayTotal || b.displayScore - a.displayScore);
     }
 
     if (!search.trim()) return computedList;
@@ -442,11 +508,11 @@ export default function LeaderboardPage() {
                       (p) => p.verifiedStatus === "verified"
                     );
 
-                    const easy = activeTab === "allTime" ? entry.allTimeEasy : Math.round(entry.todayEasy * mult);
-                    const med = activeTab === "allTime" ? entry.allTimeMedium : Math.round(entry.todayMedium * mult);
-                    const hard = activeTab === "allTime" ? entry.allTimeHard : Math.round(entry.todayHard * mult);
-                    const score = activeTab === "allTime" ? entry.allTimeScore : Math.round(entry.todayScore * mult);
-                    const total = activeTab === "allTime" ? entry.allTimeTotal : Math.round(entry.todayTotal * mult);
+                    const easy = entry.displayEasy ?? 0;
+                    const med = entry.displayMedium ?? 0;
+                    const hard = entry.displayHard ?? 0;
+                    const score = entry.displayScore ?? 0;
+                    const total = entry.displayTotal ?? 0;
 
                     const visiblePlatforms = entry.platformAccounts.filter((p) =>
                       selectedPlatforms.includes(p.platform)

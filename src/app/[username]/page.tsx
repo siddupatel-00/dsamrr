@@ -207,7 +207,21 @@ export default async function UserProfilePage({ params }: PageProps) {
         : platformSnaps;
 
       const targetSnap = validSnaps.find((s) => s.date === targetDateStr);
-      if (!targetSnap) return;
+      if (!targetSnap) {
+        const latestSnap = validSnaps[validSnaps.length - 1];
+        if (latestSnap?.rawData) {
+          try {
+            const rawObj = typeof latestSnap.rawData === "string" ? JSON.parse(latestSnap.rawData) : latestSnap.rawData;
+            const cal = rawObj?.activityByDate || parseSubmissionCalendar(rawObj?.submissionCalendarRaw || rawObj?.submissionCalendar);
+            if (cal && cal[targetDateStr] > 0) {
+              delta += Number(cal[targetDateStr]);
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+        return;
+      }
 
       const prevSnap = validSnaps
         .filter((s) => s.date < targetDateStr)
@@ -233,12 +247,14 @@ export default async function UserProfilePage({ params }: PageProps) {
     return delta;
   };
 
-  // Monthly stats from daily deltas
+  // Monthly stats from daily deltas across all elapsed days this month
   const currentMonthPrefix = new Date().toISOString().slice(0, 7);
-  const distinctMonthDates = Array.from(
-    new Set(snapshots.filter((s) => s.date.startsWith(currentMonthPrefix)).map((s) => s.date))
-  );
-  const thisMonthSolved = distinctMonthDates.reduce((acc, dateStr) => acc + getDailyDelta(dateStr), 0);
+  const currentDayNum = new Date().getUTCDate();
+  const allMonthDates: string[] = [];
+  for (let d = 1; d <= currentDayNum; d++) {
+    allMonthDates.push(`${currentMonthPrefix}-${String(d).padStart(2, "0")}`);
+  }
+  const thisMonthSolved = allMonthDates.reduce((acc, dateStr) => acc + getDailyDelta(dateStr), 0);
 
   // Helper for 14-day lockout
   const getLockoutInfo = (acc?: typeof platformAccounts.$inferSelect) => {
