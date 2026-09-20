@@ -53,23 +53,38 @@ export async function POST(req: NextRequest) {
           sessionUser.email || sessionUser.username || null,
         ],
       });
-    } else {
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      const isMock =
-        !keySecret ||
-        keySecret === "mock_secret" ||
-        String(razorpay_order_id).startsWith("order_mock") ||
-        String(razorpay_order_id).startsWith("order_");
+      if (!keySecret) {
+        return NextResponse.json(
+          { success: false, error: "Payment processor is not configured on the server." },
+          { status: 500 }
+        );
+      }
 
-      if (!isMock && keySecret) {
-        const generatedSignature = crypto
-          .createHmac("sha256", keySecret)
-          .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-          .digest("hex");
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return NextResponse.json(
+          { success: false, error: "Missing required payment proof parameters." },
+          { status: 400 }
+        );
+      }
 
-        if (generatedSignature !== razorpay_signature) {
-          return NextResponse.json({ success: false, error: "Invalid payment signature" }, { status: 400 });
-        }
+      const generatedSignature = crypto
+        .createHmac("sha256", keySecret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest("hex");
+
+      const isSignatureValid =
+        razorpay_signature.length === generatedSignature.length &&
+        crypto.timingSafeEqual(
+          Buffer.from(razorpay_signature),
+          Buffer.from(generatedSignature)
+        );
+
+      if (!isSignatureValid) {
+        return NextResponse.json(
+          { success: false, error: "Invalid cryptographic payment signature. Tampering detected." },
+          { status: 400 }
+        );
       }
 
       if (cleanCoupon === "CLAUDE10") {

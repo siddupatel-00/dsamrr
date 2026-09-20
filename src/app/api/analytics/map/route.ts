@@ -29,14 +29,25 @@ function getCountryName(code: string): string {
   return trimmed;
 }
 
+import { cookies } from "next/headers";
+
 export async function GET(req: NextRequest) {
   try {
+    const cookieStore = cookies();
+    const isUnlocked = cookieStore.get("analytics_unlocked")?.value === "true";
+    const authHeader = req.headers.get("x-analytics-key");
+    const expectedSecret =
+      process.env.ANALYTICS_PASSWORD ||
+      process.env.PRIVACY_KEY ||
+      process.env.ANALYTICS_SECRET;
+    const isAuthenticated = isUnlocked || Boolean(authHeader && expectedSecret && authHeader === expectedSecret);
+
     const now = Date.now();
     const url = req.nextUrl;
     const range = url.searchParams.get("range") || "7d";
     const customStart = url.searchParams.get("startDate");
     const customEnd = url.searchParams.get("endDate");
-    const cacheKey = `${range}_${customStart || ""}_${customEnd || ""}`;
+    const cacheKey = `${range}_${customStart || ""}_${customEnd || ""}_${isAuthenticated ? "auth" : "pub"}`;
 
     if (cachedDataByRange[cacheKey] && now - cachedDataByRange[cacheKey].time < CACHE_TTL_MS) {
       return NextResponse.json(cachedDataByRange[cacheKey].data, {
@@ -303,6 +314,35 @@ export async function GET(req: NextRequest) {
 
     const uniqueCountries = new Set(locations.map((l) => l.country)).size;
     const uniqueCities = new Set(locations.map((l) => l.city)).size;
+
+    if (!isAuthenticated) {
+      const publicData = {
+        success: true,
+        locations: locations.map((l) => ({
+          id: l.id,
+          city: l.city,
+          country: l.country,
+          countryCode: l.countryCode,
+          lat: l.lat,
+          lng: l.lng,
+          visitCount: l.visitCount,
+        })),
+        totalVisitors: 0,
+        totalViews: 0,
+        onlineCount: 0,
+        uniqueCountries: 0,
+        uniqueCities: 0,
+        sources: [],
+        channels: [],
+        devices: [],
+        browsers: [],
+        os: [],
+      };
+      cachedDataByRange[cacheKey] = { data: publicData, time: now };
+      return NextResponse.json(publicData, {
+        headers: { "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10" },
+      });
+    }
 
     const resultData = {
       success: true,

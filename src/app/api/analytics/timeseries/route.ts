@@ -36,8 +36,28 @@ function formatDate(d: Date): string {
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+import { cookies } from "next/headers";
+
 export async function GET(req: NextRequest) {
   try {
+    // Check authentication: require analytics_unlocked cookie or valid x-analytics-key header
+    const cookieStore = cookies();
+    const isUnlocked = cookieStore.get("analytics_unlocked")?.value === "true";
+    const authHeader = req.headers.get("x-analytics-key");
+    const expectedSecret =
+      process.env.ANALYTICS_PASSWORD ||
+      process.env.PRIVACY_KEY ||
+      process.env.ANALYTICS_SECRET;
+
+    const isHeaderAuth = Boolean(authHeader && expectedSecret && authHeader === expectedSecret);
+
+    if (!isUnlocked && !isHeaderAuth) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized. Please unlock analytics." },
+        { status: 401 }
+      );
+    }
+
     await initDb();
     const url = req.nextUrl;
     const range = url.searchParams.get("range") || "today";
