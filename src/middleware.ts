@@ -123,8 +123,17 @@ export function middleware(req: NextRequest) {
     let windowMs = 60_000;
     let rateKey = `general:${ip}`;
 
+    // Anti-Brute-Force: Login / Credentials (5 attempts per 15 min)
+    if (
+      pathname === "/api/auth/callback/credentials" ||
+      pathname === "/api/auth/signin"
+    ) {
+      limit = 5;
+      windowMs = 15 * 60_000;
+      rateKey = `login:${ip}`;
+    }
     // Anti-Brute-Force: Privacy Access Key verification (5 attempts per 15 min)
-    if (pathname === "/api/privacy/verify" && req.method === "POST") {
+    else if (pathname === "/api/privacy/verify" && req.method === "POST") {
       limit = 5;
       windowMs = 15 * 60_000;
       rateKey = `privacy:${ip}`;
@@ -180,6 +189,21 @@ export function middleware(req: NextRequest) {
   // 4. Set Comprehensive Security Headers on all responses
   const response = NextResponse.next();
 
+  const cspHeader = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https://api.dicebear.com https://avatars.githubusercontent.com https://images.unsplash.com https://*.razorpay.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://*.turso.io",
+    "frame-src 'self' https://api.razorpay.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+
+  response.headers.set("Content-Security-Policy", cspHeader);
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

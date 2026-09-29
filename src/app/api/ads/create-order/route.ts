@@ -88,6 +88,12 @@ export async function POST(req: NextRequest) {
 
     // In local dev/fallback mode without real API keys
     if (!keyId || !keySecret || keyId === "rzp_test_placeholder_key") {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { success: false, error: "Payment gateway is currently unavailable." },
+          { status: 503 }
+        );
+      }
       const mockOrderId = `order_${crypto.randomBytes(8).toString("hex")}`;
       return NextResponse.json({
         success: true,
@@ -136,8 +142,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("Razorpay order creation error:", err);
+    const message = process.env.NODE_ENV === "production"
+      ? "Unable to initiate payment. Please try again."
+      : err?.message || "Failed to create Razorpay order";
     return NextResponse.json(
-      { success: false, error: err.message || "Failed to create Razorpay order" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

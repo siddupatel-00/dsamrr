@@ -285,8 +285,11 @@ export async function POST(req: NextRequest) {
     }
   } catch (err: any) {
     console.error("Payment verification error:", err);
+    const message = process.env.NODE_ENV === "production"
+      ? "Payment verification failed. Please contact support if you were debited."
+      : err?.message || "Payment verification failed";
     return NextResponse.json(
-      { success: false, error: err.message || "Payment verification failed" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

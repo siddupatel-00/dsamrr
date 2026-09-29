@@ -163,6 +163,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("Free coupon claim error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const message = process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred while claiming coupon."
+      : err?.message || "An unexpected error occurred.";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

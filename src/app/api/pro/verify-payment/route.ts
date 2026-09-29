@@ -145,6 +145,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("Pro payment verification error:", err);
-    return NextResponse.json({ success: false, error: err.message || "Payment verification failed" }, { status: 500 });
+    const message = process.env.NODE_ENV === "production"
+      ? "Payment verification failed. Please contact support if you were debited."
+      : err?.message || "Payment verification failed";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

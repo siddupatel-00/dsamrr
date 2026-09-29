@@ -52,6 +52,10 @@ export async function PATCH(req: NextRequest) {
       message: `Updated visibility for ${platform}`,
     });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    console.error("Account visibility update error:", err);
+    const message = process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred."
+      : err?.message || "An unexpected error occurred.";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

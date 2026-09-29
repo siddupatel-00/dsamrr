@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!keyId || !keySecret || keyId === "rzp_test_placeholder_key") {
+      if (process.env.NODE_ENV === "production") {
+        return NextResponse.json(
+          { success: false, error: "Payment gateway is currently unavailable." },
+          { status: 503 }
+        );
+      }
       const mockOrderId = `order_${crypto.randomBytes(8).toString("hex")}`;
       return NextResponse.json({
         success: true,
@@ -85,6 +91,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("Pro order creation error:", err);
-    return NextResponse.json({ success: false, error: err.message || "Failed to create order" }, { status: 500 });
+    const message = process.env.NODE_ENV === "production"
+      ? "Unable to initiate upgrade order. Please try again."
+      : err?.message || "Failed to create order";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

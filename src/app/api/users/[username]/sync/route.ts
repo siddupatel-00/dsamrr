@@ -228,6 +228,10 @@ export async function POST(
       message: `Synced verified platform stats for @${username}`,
     });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    console.error(`Sync error for @${params?.username}:`, err);
+    const message = process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred during sync."
+      : err?.message || "An unexpected error occurred.";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

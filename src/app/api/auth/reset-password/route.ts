@@ -4,7 +4,7 @@ import { db, client } from "@/db";
 import { initDb } from "@/db/init";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "@/lib/crypto";
+import { hashPassword, hashOtp, verifyOtp } from "@/lib/crypto";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       }
 
       const resetOtp = crypto.randomInt(100000, 1_000_000).toString();
+      const hashedOtp = hashOtp(resetOtp, normalizedEmail);
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
       await client.execute({
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
             attempts = 0,
             last_sent_at = excluded.last_sent_at
         `,
-        args: [normalizedEmail, resetOtp, expiresAt, Date.now()],
+        args: [normalizedEmail, hashedOtp, expiresAt, Date.now()],
       });
 
       const sendResult = await sendSignupOtpEmail({
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
         args: [currentAttempts, normalizedEmail],
       });
 
-      if (String(entry.otp_code).trim() !== String(otp || "").trim()) {
+      if (!verifyOtp(String(otp || ""), normalizedEmail, entry.otp_code as string)) {
         return NextResponse.json(
           { success: false, error: "Incorrect verification code." },
           { status: 400 }
@@ -154,6 +155,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (err: any) {
     console.error("Reset password error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const message = process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred. Please try again later."
+      : err?.message || "An unexpected error occurred.";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

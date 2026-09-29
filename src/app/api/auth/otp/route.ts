@@ -5,7 +5,7 @@ import { db, client } from "@/db";
 import { initDb } from "@/db/init";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "@/lib/crypto";
+import { hashPassword, hashOtp, verifyOtp } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +44,10 @@ export async function POST(req: NextRequest) {
       }
 
       const otpCode = crypto.randomInt(100000, 1_000_000).toString();
+      const hashedOtp = hashOtp(otpCode, normalizedEmail);
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-      // Store in Turso DB (guaranteed to persist across all serverless instances)
+      // Store hashed OTP in DB (never plaintext)
       await client.execute({
         sql: `
           INSERT INTO verification_otps (email, otp_code, expires_at, attempts, last_sent_at)
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
             attempts = 0,
             last_sent_at = excluded.last_sent_at
         `,
-        args: [normalizedEmail, otpCode, expiresAt, Date.now()],
+        args: [normalizedEmail, hashedOtp, expiresAt, Date.now()],
       });
 
       const sendResult = await sendSignupOtpEmail({
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
         args: [currentAttempts, normalizedEmail],
       });
 
-      if (String(entry.otp_code).trim() !== String(otp || "").trim()) {
+      if (!verifyOtp(String(otp || ""), normalizedEmail, entry.otp_code as string)) {
         return NextResponse.json(
           { success: false, error: "Incorrect verification code. Please check and try again." },
           { status: 400 }
@@ -176,6 +177,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (err: any) {
     console.error("OTP API error:", err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const message = process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred. Please try again later."
+      : err?.message || "An unexpected error occurred.";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

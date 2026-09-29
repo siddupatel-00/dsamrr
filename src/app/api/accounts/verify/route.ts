@@ -32,8 +32,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(result, { status: 400 });
     }
   } catch (err: any) {
+    console.error("Account verification error:", err);
+    const message = process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred during verification."
+      : err?.message || "An unexpected error occurred.";
     return NextResponse.json(
-      { success: false, message: err.message },
+      { success: false, message },
       { status: 500 }
     );
   }

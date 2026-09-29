@@ -51,6 +51,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error("sync-github error:", err);
-    return NextResponse.json({ success: false, error: err.message || "Failed to sync GitHub" }, { status: 500 });
+    const message = process.env.NODE_ENV === "production"
+      ? "Failed to sync GitHub."
+      : err?.message || "Failed to sync GitHub";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
