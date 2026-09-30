@@ -191,11 +191,11 @@ export function middleware(req: NextRequest) {
 
   const cspHeader = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://sidfast.vercel.app",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https://api.dicebear.com https://avatars.githubusercontent.com https://images.unsplash.com https://*.razorpay.com",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://*.turso.io",
+    "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://*.turso.io https://sidfast.vercel.app",
     "frame-src 'self' https://api.razorpay.com",
     "object-src 'none'",
     "base-uri 'self'",

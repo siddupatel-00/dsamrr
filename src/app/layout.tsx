@@ -26,6 +26,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <script
+          defer
+          src="https://sidfast.vercel.app/t.js?site=s_06ff268c8dfc004421f96bbe"
+        />
+      </head>
       <body className="bg-[#09090b] text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-zinc-800 selection:text-white">
         <AuthProvider>
           {/* Clean Full-width Top Navbar */}
