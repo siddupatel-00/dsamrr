@@ -44,14 +44,14 @@ export async function GET(req: NextRequest) {
 
     const now = Date.now();
     const url = req.nextUrl;
-    const range = url.searchParams.get("range") || "7d";
+    const range = url.searchParams.get("range") || "all";
     const customStart = url.searchParams.get("startDate");
     const customEnd = url.searchParams.get("endDate");
     const cacheKey = `${range}_${customStart || ""}_${customEnd || ""}_${isAuthenticated ? "auth" : "pub"}`;
 
     if (cachedDataByRange[cacheKey] && now - cachedDataByRange[cacheKey].time < CACHE_TTL_MS) {
       return NextResponse.json(cachedDataByRange[cacheKey].data, {
-        headers: { "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10" },
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
       });
     }
 
@@ -326,6 +326,8 @@ export async function GET(req: NextRequest) {
           lat: l.lat,
           lng: l.lng,
           visitCount: l.visitCount,
+          referrer: l.referrer || "Direct",
+          lastVisitedAt: l.lastVisitedAt,
         })),
         totalVisitors: 0,
         totalViews: 0,
@@ -340,7 +342,7 @@ export async function GET(req: NextRequest) {
       };
       cachedDataByRange[cacheKey] = { data: publicData, time: now };
       return NextResponse.json(publicData, {
-        headers: { "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10" },
+        headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
       });
     }
 
@@ -362,7 +364,7 @@ export async function GET(req: NextRequest) {
     cachedDataByRange[cacheKey] = { data: resultData, time: now };
 
     return NextResponse.json(resultData, {
-      headers: { "Cache-Control": "public, s-maxage=5, stale-while-revalidate=10" },
+      headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

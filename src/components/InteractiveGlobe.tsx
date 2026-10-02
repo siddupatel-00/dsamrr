@@ -33,6 +33,7 @@ export function InteractiveGlobe({
   const isUserInteracting = useRef(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateRef = useRef(autoRotate);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
     autoRotateRef.current = autoRotate;
@@ -114,6 +115,7 @@ export function InteractiveGlobe({
     // Ensure map accurately dimensions and sets 3D globe projection
     map.on("load", () => {
       map.resize();
+      setMapLoaded(true);
     });
 
     map.on("style.load", () => {
@@ -281,7 +283,7 @@ export function InteractiveGlobe({
 
       markersRef.current.push(marker);
     });
-  }, [locations, onSelectLocation]);
+  }, [locations, mapLoaded, onSelectLocation]);
 
   // 3. Smooth Fly-To on external location select
   useEffect(() => {

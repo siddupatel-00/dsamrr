@@ -12,10 +12,10 @@ export default function MapTelemetryPage() {
 
   const fetchTelemetry = async () => {
     try {
-      const res = await fetch("/api/analytics/map");
+      const res = await fetch(`/api/analytics/map?range=all&t=${Date.now()}`);
       const data = await res.json();
-      if (data.success) {
-        setLocations(data.locations || []);
+      if (data.success && Array.isArray(data.locations) && data.locations.length > 0) {
+        setLocations(data.locations);
       }
     } catch (e) {
       console.error("Telemetry fetch note:", e);
