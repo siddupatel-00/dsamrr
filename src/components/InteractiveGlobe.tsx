@@ -54,10 +54,23 @@ export function InteractiveGlobe({
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      // ESRI World Dark Gray — free, no API key, true dark map with city labels
+      // Carto Dark Matter Retina Tiles — fast, high contrast dark globe with crisp geography
       style: {
         version: 8,
+        projection: { type: "globe" },
         sources: {
+          "carto-dark": {
+            type: "raster",
+            tiles: [
+              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+            ],
+            tileSize: 256,
+            attribution: "© OpenStreetMap contributors © CARTO",
+            maxzoom: 19,
+          },
           "esri-dark": {
             type: "raster",
             tiles: [
@@ -67,27 +80,12 @@ export function InteractiveGlobe({
             attribution: "Esri, HERE, Garmin, © OpenStreetMap",
             maxzoom: 16,
           },
-          "esri-dark-labels": {
-            type: "raster",
-            tiles: [
-              "https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
-            ],
-            tileSize: 256,
-            maxzoom: 16,
-          },
         },
         layers: [
           {
-            id: "esri-dark-base",
+            id: "carto-dark-base",
             type: "raster",
-            source: "esri-dark",
-            minzoom: 0,
-            maxzoom: 20,
-          },
-          {
-            id: "esri-dark-ref",
-            type: "raster",
-            source: "esri-dark-labels",
+            source: "carto-dark",
             minzoom: 0,
             maxzoom: 20,
           },
@@ -104,13 +102,17 @@ export function InteractiveGlobe({
         antialias: true,
       },
       // Globe projection — renders as a 3D sphere
-      // @ts-ignore (globe is supported in maplibre-gl v3+)
+      // @ts-ignore
       projection: { type: "globe" },
     });
 
     mapRef.current = map;
 
-    // Enable Globe Projection if supported
+    // Ensure map accurately dimensions and sets 3D globe projection
+    map.on("load", () => {
+      map.resize();
+    });
+
     map.on("style.load", () => {
       try {
         if ((map as any).setProjection) {
@@ -118,6 +120,12 @@ export function InteractiveGlobe({
         }
       } catch (e) {}
     });
+
+    const resizeTimer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.resize();
+      }
+    }, 150);
 
     // Auto-rotation loop
     let reqId: number;
@@ -205,6 +213,7 @@ export function InteractiveGlobe({
     window.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
+      clearTimeout(resizeTimer);
       cancelAnimationFrame(reqId);
       window.removeEventListener("mousedown", handleOutsideClick);
       map.remove();
