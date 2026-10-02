@@ -54,23 +54,11 @@ export function InteractiveGlobe({
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      // Carto Dark Matter Retina Tiles — fast, high contrast dark globe with crisp geography
+      // ESRI World Dark Gray — free, no API key, zero watermarks, crystal clear cities & borders
       style: {
         version: 8,
         projection: { type: "globe" },
         sources: {
-          "carto-dark": {
-            type: "raster",
-            tiles: [
-              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: "© OpenStreetMap contributors © CARTO",
-            maxzoom: 19,
-          },
           "esri-dark": {
             type: "raster",
             tiles: [
@@ -80,12 +68,27 @@ export function InteractiveGlobe({
             attribution: "Esri, HERE, Garmin, © OpenStreetMap",
             maxzoom: 16,
           },
+          "esri-dark-labels": {
+            type: "raster",
+            tiles: [
+              "https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+            ],
+            tileSize: 256,
+            maxzoom: 16,
+          },
         },
         layers: [
           {
-            id: "carto-dark-base",
+            id: "esri-dark-base",
             type: "raster",
-            source: "carto-dark",
+            source: "esri-dark",
+            minzoom: 0,
+            maxzoom: 20,
+          },
+          {
+            id: "esri-dark-ref",
+            type: "raster",
+            source: "esri-dark-labels",
             minzoom: 0,
             maxzoom: 20,
           },
